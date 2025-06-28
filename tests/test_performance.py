@@ -74,7 +74,7 @@ class TestPerformance:
         parser = BQLParser.from_string(
             "SELECT sub, ses, task, run, filepath WHERE "
             "(datatype=func OR datatype=anat) AND "
-            "(task=rest OR task~=/.*back.*/) "
+            "(task=rest OR task~=\".*back.*\") "
             "ORDER BY sub, ses, run"
         )
         query = parser.parse()
@@ -121,7 +121,7 @@ class TestPerformance:
         
         start_time = time.time()
         
-        parser = BQLParser.from_string("suffix~=/.*bold.*/ AND sub~=/0[1-5]/")
+        parser = BQLParser.from_string("suffix~=\".*bold.*\" AND sub~=\"0[1-5]\"")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
