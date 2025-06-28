@@ -102,9 +102,28 @@ class BQLParser:
             items.append(('*', None))
         else:
             while True:
-                expr = self._parse_identifier_path()
-                alias = None
+                # Handle function calls or regular identifiers
+                if self._current_token_type() in [TokenType.COUNT, TokenType.AVG, TokenType.MAX, 
+                                                TokenType.MIN, TokenType.SUM]:
+                    # This is a function call
+                    func_name = self._consume(self._current_token_type()).value
+                    self._consume(TokenType.LPAREN)
+                    
+                    # Handle function arguments
+                    if self._current_token_type() == TokenType.STAR:
+                        self._consume(TokenType.STAR)
+                        func_expr = f"{func_name}(*)"
+                    else:
+                        arg = self._parse_identifier_path()
+                        func_expr = f"{func_name}({arg})"
+                    
+                    self._consume(TokenType.RPAREN)
+                    expr = func_expr
+                else:
+                    # Regular identifier path
+                    expr = self._parse_identifier_path()
                 
+                alias = None
                 if self._current_token_type() == TokenType.AS:
                     self._consume(TokenType.AS)
                     alias = self._consume(TokenType.IDENTIFIER).value
@@ -192,6 +211,10 @@ class BQLParser:
         if self._current_token_type() == TokenType.IDENTIFIER:
             return self._parse_field_or_literal()
             
+        # Wildcard pattern (starts with *)
+        if self._current_token_type() == TokenType.STAR:
+            return self._parse_wildcard_pattern()
+            
         # String literal
         if self._current_token_type() == TokenType.STRING:
             token = self._consume(TokenType.STRING)
@@ -205,10 +228,20 @@ class BQLParser:
         raise BQLParseError(f"Unexpected token: {self._current_token()}")
         
     def _parse_field_or_literal(self) -> Expression:
-        """Parse field access expression"""
-        parts = [self._consume(TokenType.IDENTIFIER).value]
+        """Parse field access expression or wildcard pattern"""
+        first_part = self._consume(TokenType.IDENTIFIER).value
+        
+        # Check if this might be part of a wildcard pattern
+        if self._current_token_type() in [TokenType.STAR, TokenType.QUESTION]:
+            # This is a wildcard pattern starting with identifier
+            pattern = first_part
+            while self._current_token_type() in [TokenType.STAR, TokenType.IDENTIFIER, TokenType.QUESTION]:
+                token = self._consume(self._current_token_type())
+                pattern += token.value
+            return Literal(pattern)
         
         # Handle dots for metadata/participants access
+        parts = [first_part]
         while self._current_token_type() == TokenType.DOT:
             self._consume(TokenType.DOT)
             parts.append(self._consume(TokenType.IDENTIFIER).value)
@@ -299,6 +332,17 @@ class BQLParser:
             items.append((field, direction))
             
         return items
+        
+    def _parse_wildcard_pattern(self) -> Expression:
+        """Parse wildcard pattern like *bold* or *text"""
+        pattern = ""
+        
+        # Consume tokens until we hit a non-pattern token
+        while self._current_token_type() in [TokenType.STAR, TokenType.IDENTIFIER, TokenType.QUESTION]:
+            token = self._consume(self._current_token_type())
+            pattern += token.value
+            
+        return Literal(pattern)
         
     def _parse_identifier_path(self) -> str:
         """Parse dot-separated identifier path"""

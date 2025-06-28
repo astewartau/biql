@@ -319,8 +319,8 @@ class TestBQLEvaluator:
         assert len(results) > 0
         for result in results:
             assert "sub" in result
-            assert "_count" in result
-            assert result["_count"] > 0
+            assert "count" in result
+            assert result["count"] > 0
             
     def test_order_by_functionality(self, evaluator):
         """Test ORDER BY functionality"""

@@ -88,7 +88,12 @@ class BQLEvaluator:
             else:
                 # Comparison operators
                 left_val = self._get_value(file, expr.left)
-                right_val = self._get_value(file, expr.right)
+                # For comparison right side, handle FieldAccess as literal values
+                if isinstance(expr.right, FieldAccess) and expr.right.path is None:
+                    # Bare identifier on right side should be treated as literal
+                    right_val = expr.right.field
+                else:
+                    right_val = self._get_value(file, expr.right)
                 return self._compare(left_val, expr.operator, right_val)
                 
         elif isinstance(expr, UnaryOp):
@@ -125,7 +130,7 @@ class BQLEvaluator:
                         return value
                     return None
             else:
-                # Entity access
+                # Entity access - return the value from file entities
                 return file.entities.get(expr.field)
                 
         elif isinstance(expr, Literal):
@@ -154,6 +159,11 @@ class BQLEvaluator:
             return operator == TokenType.NEQ and right is not None
         if right is None:
             return operator == TokenType.NEQ and left is not None
+        
+        # Convert FieldAccess to string literal when used as comparison value
+        if hasattr(right, 'field') and hasattr(right, 'path') and right.path is None:
+            # This is a bare identifier like 'func' in 'datatype=func' 
+            right = right.field
             
         # Handle IN operator with lists
         if operator == TokenType.IN and isinstance(right, list):
