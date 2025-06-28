@@ -1,0 +1,203 @@
+"""
+Output formatters for BIDS Query Language (BQL)
+
+Formats query results in different output formats.
+"""
+
+import csv
+import io
+import json
+from typing import Any, Dict, List
+
+
+class BQLFormatter:
+    """Formats query results in different output formats"""
+    
+    @staticmethod
+    def format(results: List[Dict], format_type: str = 'json') -> str:
+        """Format results based on specified type"""
+        format_type = format_type.lower() if format_type else 'json'
+        
+        if format_type == 'json':
+            return BQLFormatter._format_json(results)
+        elif format_type == 'table':
+            return BQLFormatter._format_table(results)
+        elif format_type == 'csv':
+            return BQLFormatter._format_csv(results)
+        elif format_type == 'paths':
+            return BQLFormatter._format_paths(results)
+        elif format_type == 'tsv':
+            return BQLFormatter._format_tsv(results)
+        else:
+            # Default to JSON for unknown formats
+            return BQLFormatter._format_json(results)
+    
+    @staticmethod
+    def _format_json(results: List[Dict]) -> str:
+        """Format results as JSON"""
+        def json_serializer(obj):
+            """Custom JSON serializer for complex objects"""
+            if hasattr(obj, '__dict__'):
+                return obj.__dict__
+            return str(obj)
+            
+        return json.dumps(results, indent=2, default=json_serializer, ensure_ascii=False)
+    
+    @staticmethod
+    def _format_table(results: List[Dict]) -> str:
+        """Format results as ASCII table"""
+        if not results:
+            return "No results found."
+            
+        # Get all unique keys, excluding internal fields
+        all_keys = set()
+        for result in results:
+            for key in result.keys():
+                if not key.startswith('_') or key == '_count':
+                    all_keys.add(key)
+        all_keys = sorted(all_keys)
+        
+        if not all_keys:
+            return "No data to display."
+            
+        # Calculate column widths
+        widths = {}
+        for key in all_keys:
+            widths[key] = len(key)
+            
+        for result in results:
+            for key in all_keys:
+                value = BQLFormatter._format_value_for_display(result.get(key))
+                widths[key] = max(widths[key], len(value))
+                
+        # Build table
+        lines = []
+        
+        # Header
+        header = '|'
+        for key in all_keys:
+            header += f" {key:<{widths[key]}} |"
+        lines.append(header)
+        
+        # Separator
+        separator = '|'
+        for key in all_keys:
+            separator += f" {'-' * widths[key]} |"
+        lines.append(separator)
+        
+        # Data rows
+        for result in results:
+            row = '|'
+            for key in all_keys:
+                value = BQLFormatter._format_value_for_display(result.get(key))
+                row += f" {value:<{widths[key]}} |"
+            lines.append(row)
+            
+        return '\n'.join(lines)
+    
+    @staticmethod
+    def _format_csv(results: List[Dict]) -> str:
+        """Format results as CSV"""
+        if not results:
+            return ""
+            
+        output = io.StringIO()
+        
+        # Get all fieldnames, excluding internal fields
+        fieldnames = set()
+        for result in results:
+            for key in result.keys():
+                if not key.startswith('_') or key == '_count':
+                    fieldnames.add(key)
+        fieldnames = sorted(fieldnames)
+        
+        if fieldnames:
+            writer = csv.DictWriter(output, fieldnames=fieldnames, extrasaction='ignore')
+            writer.writeheader()
+            
+            for result in results:
+                # Convert complex values for CSV output
+                csv_row = {}
+                for key in fieldnames:
+                    value = result.get(key)
+                    csv_row[key] = BQLFormatter._format_value_for_csv(value)
+                writer.writerow(csv_row)
+                
+        return output.getvalue()
+    
+    @staticmethod
+    def _format_tsv(results: List[Dict]) -> str:
+        """Format results as TSV (Tab-Separated Values)"""
+        if not results:
+            return ""
+            
+        # Get all fieldnames, excluding internal fields
+        fieldnames = set()
+        for result in results:
+            for key in result.keys():
+                if not key.startswith('_') or key == '_count':
+                    fieldnames.add(key)
+        fieldnames = sorted(fieldnames)
+        
+        if not fieldnames:
+            return ""
+            
+        lines = []
+        
+        # Header
+        lines.append('\t'.join(fieldnames))
+        
+        # Data rows
+        for result in results:
+            row_values = []
+            for key in fieldnames:
+                value = result.get(key)
+                formatted_value = BQLFormatter._format_value_for_csv(value)
+                row_values.append(formatted_value)
+            lines.append('\t'.join(row_values))
+            
+        return '\n'.join(lines)
+    
+    @staticmethod
+    def _format_paths(results: List[Dict]) -> str:
+        """Format results as file paths only"""
+        paths = []
+        for result in results:
+            if 'filepath' in result:
+                paths.append(str(result['filepath']))
+            elif 'relative_path' in result:
+                paths.append(str(result['relative_path']))
+                
+        return '\n'.join(paths)
+    
+    @staticmethod
+    def _format_value_for_display(value: Any) -> str:
+        """Format a value for display in tables"""
+        if value is None:
+            return ''
+        elif isinstance(value, dict):
+            # For metadata objects, show key count
+            return f'{{...{len(value)} keys...}}'
+        elif isinstance(value, list):
+            # For lists, show item count
+            return f'[...{len(value)} items...]'
+        elif isinstance(value, (int, float)):
+            return str(value)
+        else:
+            return str(value)
+    
+    @staticmethod
+    def _format_value_for_csv(value: Any) -> str:
+        """Format a value for CSV output"""
+        if value is None:
+            return ''
+        elif isinstance(value, dict):
+            # Convert dict to JSON string for CSV
+            return json.dumps(value, separators=(',', ':'))
+        elif isinstance(value, list):
+            # Convert list to JSON string for CSV
+            return json.dumps(value, separators=(',', ':'))
+        elif isinstance(value, bool):
+            return 'true' if value else 'false'
+        else:
+            return str(value)
