@@ -142,6 +142,95 @@ class TestBQLParser:
         
         assert query.select_clause is not None
         assert query.select_clause.distinct is False
+        
+    def test_having_clause_parsing(self):
+        """Test parsing HAVING clauses"""
+        parser = BQLParser.from_string("SELECT sub, COUNT(*) GROUP BY sub HAVING COUNT(*) > 2")
+        query = parser.parse()
+        
+        assert query.group_by is not None
+        assert query.having is not None
+        
+    def test_function_call_parsing_with_arguments(self):
+        """Test parsing function calls with different argument types"""
+        # Function with STAR argument
+        parser = BQLParser.from_string("SELECT COUNT(*)")
+        query = parser.parse()
+        
+        assert query.select_clause is not None
+        assert len(query.select_clause.items) == 1
+        assert query.select_clause.items[0][0] == "COUNT(*)"
+        
+        # Function with field argument
+        parser = BQLParser.from_string("SELECT AVG(metadata.RepetitionTime)")
+        query = parser.parse()
+        
+        assert query.select_clause is not None
+        assert len(query.select_clause.items) == 1
+        # Should parse as AVG(metadata.RepetitionTime)
+        assert "AVG" in query.select_clause.items[0][0]
+        
+    def test_not_operator_parsing(self):
+        """Test parsing NOT operator"""
+        parser = BQLParser.from_string("NOT datatype=func")
+        query = parser.parse()
+        
+        assert query.where_clause is not None
+        # Should parse successfully
+        
+    def test_complex_function_calls_in_select(self):
+        """Test function calls in SELECT with aliases"""
+        parser = BQLParser.from_string("SELECT COUNT(*) AS total_files, sub")
+        query = parser.parse()
+        
+        assert query.select_clause is not None
+        assert len(query.select_clause.items) == 2
+        assert query.select_clause.items[0] == ("COUNT(*)", "total_files")
+        assert query.select_clause.items[1] == ("sub", None)
+        
+    def test_list_expression_parsing(self):
+        """Test parsing list expressions in IN clauses"""
+        parser = BQLParser.from_string("sub IN [01, 02, 03]")
+        query = parser.parse()
+        
+        assert query.where_clause is not None
+        # Should parse without errors
+        
+    def test_wildcard_pattern_parsing_edge_cases(self):
+        """Test wildcard pattern parsing with mixed patterns"""
+        # Test identifier followed by wildcard
+        parser = BQLParser.from_string("suffix=bold*")
+        query = parser.parse()
+        
+        assert query.where_clause is not None
+        
+        # Test pattern with question marks
+        parser = BQLParser.from_string("suffix=T?w")
+        query = parser.parse()
+        
+        assert query.where_clause is not None
+        
+    def test_multiple_comma_separated_items(self):
+        """Test parsing multiple comma-separated items in various contexts"""
+        # Multiple ORDER BY fields
+        parser = BQLParser.from_string("sub=01 ORDER BY sub ASC, ses DESC, run ASC")
+        query = parser.parse()
+        
+        assert query.order_by is not None
+        assert len(query.order_by) == 3
+        assert query.order_by[0] == ("sub", "ASC")
+        assert query.order_by[1] == ("ses", "DESC") 
+        assert query.order_by[2] == ("run", "ASC")
+        
+        # Multiple GROUP BY fields
+        parser = BQLParser.from_string("SELECT COUNT(*) GROUP BY sub, ses, datatype")
+        query = parser.parse()
+        
+        assert query.group_by is not None
+        assert len(query.group_by) == 3
+        assert "sub" in query.group_by
+        assert "ses" in query.group_by
+        assert "datatype" in query.group_by
 
 
 class TestBIDSDataset:
@@ -477,6 +566,133 @@ class TestBQLEvaluator:
             if task is not None:
                 assert task not in seen_tasks, f"Duplicate task found: {task}"
                 seen_tasks.add(task)
+                
+    def test_having_clause_functionality(self, evaluator):
+        """Test HAVING clause with aggregate functions"""
+        parser = BQLParser.from_string("SELECT sub, COUNT(*) GROUP BY sub HAVING COUNT(*) > 2")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+        
+        # All results should have count > 2
+        for result in results:
+            count = result.get("count", 0)
+            assert count > 2, f"HAVING clause failed: count={count} should be > 2"
+            
+    def test_having_clause_different_operators(self, evaluator):
+        """Test HAVING clause with different comparison operators"""
+        # Test >= operator
+        parser = BQLParser.from_string("SELECT datatype, COUNT(*) GROUP BY datatype HAVING COUNT(*) >= 1")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+        
+        for result in results:
+            count = result.get("count", 0)
+            assert count >= 1
+            
+        # Test < operator (should return empty for reasonable datasets)
+        parser = BQLParser.from_string("SELECT sub, COUNT(*) GROUP BY sub HAVING COUNT(*) < 1")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+        # Should be empty since no subject can have < 1 files
+        assert len(results) == 0
+        
+    def test_error_handling_invalid_field_comparison(self, evaluator):
+        """Test error handling for invalid field comparisons"""
+        # This should not crash, just return no results for non-existent fields
+        parser = BQLParser.from_string("nonexistent_field=value")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+        assert len(results) == 0
+        
+    def test_error_handling_type_conversion(self, evaluator):
+        """Test error handling for type conversion in comparisons"""
+        # Test numeric comparison with non-numeric string (should fall back to string comparison)
+        parser = BQLParser.from_string("sub>999")  # sub is usually a string like "01"
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+        # Should not crash, may return results based on string comparison
+        assert isinstance(results, list)
+        
+    def test_not_operator(self, evaluator):
+        """Test NOT operator functionality"""
+        parser = BQLParser.from_string("NOT datatype=func")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+        
+        # Should only return non-functional files
+        for result in results:
+            datatype = result.get("datatype")
+            assert datatype != "func" or datatype is None
+            
+    def test_in_operator_with_lists(self, evaluator):
+        """Test IN operator with list values"""
+        parser = BQLParser.from_string("sub IN [01, 02, 03]")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+        
+        for result in results:
+            sub = result.get("sub")
+            if sub is not None:
+                assert sub in ["01", "02", "03"]
+                
+    def test_like_operator(self, evaluator):
+        """Test LIKE operator for SQL-style pattern matching"""
+        parser = BQLParser.from_string("task LIKE %back%")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+        
+        for result in results:
+            task = result.get("task")
+            if task is not None:
+                assert "back" in task
+                
+    def test_regex_match_operator(self, evaluator):
+        """Test regex MATCH operator (~=)"""
+        parser = BQLParser.from_string("sub~=\"0[1-3]\"")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+        
+        for result in results:
+            sub = result.get("sub")
+            if sub is not None:
+                assert sub in ["01", "02", "03"]
+                
+    def test_range_queries_edge_cases(self, evaluator):
+        """Test range queries with edge cases"""
+        # Test range with string values that can be converted to numbers
+        parser = BQLParser.from_string("run=[1:3]")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+        
+        for result in results:
+            run = result.get("run")
+            if run is not None:
+                try:
+                    run_num = int(run)
+                    assert 1 <= run_num <= 3
+                except ValueError:
+                    # If run can't be converted to int, the range shouldn't match
+                    pass
+                    
+    def test_metadata_field_access_edge_cases(self, evaluator):
+        """Test metadata field access with missing values"""
+        # Test accessing nested metadata that doesn't exist
+        parser = BQLParser.from_string("metadata.NonExistentField=value")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+        
+        # Should return empty results without crashing
+        assert len(results) == 0
+        
+    def test_participants_field_access_edge_cases(self, evaluator):
+        """Test participants data access with missing values"""
+        # Test accessing participant data for non-existent field
+        parser = BQLParser.from_string("participants.nonexistent=value")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+        
+        # Should not crash, may return empty results
+        assert isinstance(results, list)
 
 
 class TestQSMWorkflow:
@@ -696,6 +912,110 @@ class TestBQLFormatter:
         
         table_formatted = BQLFormatter.format(results, "table")
         assert "No results found" in table_formatted
+        
+    def test_tsv_formatting(self):
+        """Test TSV output formatting"""
+        results = [
+            {"sub": "01", "task": "nback", "datatype": "func"},
+            {"sub": "02", "task": "rest", "datatype": "func"}
+        ]
+        
+        formatted = BQLFormatter.format(results, "tsv")
+        lines = formatted.strip().split('\n')
+        
+        assert len(lines) >= 3  # Header + 2 data rows
+        assert "sub" in lines[0]
+        assert "task" in lines[0]
+        assert "datatype" in lines[0]
+        assert "\t" in lines[0]  # TSV should use tabs
+        assert "01" in lines[1] or "01" in lines[2]
+        
+    def test_unknown_format_fallback(self):
+        """Test unknown format falls back to JSON"""
+        results = [{"sub": "01", "task": "nback"}]
+        
+        formatted = BQLFormatter.format(results, "unknown_format")
+        # Should fall back to JSON format
+        parsed = json.loads(formatted)
+        assert len(parsed) == 1
+        assert parsed[0]["sub"] == "01"
+        
+    def test_complex_value_formatting(self):
+        """Test formatting of complex values (lists, nested dicts)"""
+        results = [
+            {
+                "sub": "01",
+                "files": ["file1.nii", "file2.nii"],
+                "metadata": {"RepetitionTime": 2.0, "EchoTime": 0.03}
+            }
+        ]
+        
+        # Test JSON formatting with complex values
+        json_formatted = BQLFormatter.format(results, "json")
+        parsed = json.loads(json_formatted)
+        assert isinstance(parsed[0]["files"], list)
+        assert len(parsed[0]["files"]) == 2
+        
+        # Test table formatting with complex values  
+        table_formatted = BQLFormatter.format(results, "table")
+        # Complex values might be displayed as [...] or {... keys...} in table format
+        assert "sub" in table_formatted and "01" in table_formatted
+        
+        # Test CSV formatting with complex values
+        csv_formatted = BQLFormatter.format(results, "csv") 
+        assert "file1.nii" in csv_formatted
+        
+    def test_paths_formatting_edge_cases(self):
+        """Test paths output formatting with edge cases"""
+        # Test with relative_path fallback
+        results = [
+            {"relative_path": "sub-01/func/sub-01_task-nback_bold.nii"},
+            {"filepath": "/absolute/path/file.nii", "relative_path": "sub-02/func/file.nii"}
+        ]
+        
+        formatted = BQLFormatter.format(results, "paths")
+        lines = formatted.strip().split('\n')
+        
+        assert len(lines) == 2
+        assert "sub-01/func/sub-01_task-nback_bold.nii" in lines
+        assert "/absolute/path/file.nii" in lines
+        
+    def test_csv_formatting_edge_cases(self):
+        """Test CSV formatting with edge cases"""
+        results = [
+            {"sub": "01", "value": None},
+            {"sub": "02", "value": True},
+            {"sub": "03", "value": 123},
+            {"sub": "04", "value": ["a", "b"]}
+        ]
+        
+        formatted = BQLFormatter.format(results, "csv")
+        lines = formatted.strip().split('\n')
+        
+        # Check header
+        assert "sub" in lines[0]
+        assert "value" in lines[0]
+        
+        # Check that different value types are handled
+        assert len(lines) >= 5  # Header + 4 data rows
+        
+    def test_empty_keys_handling(self):
+        """Test handling of empty or missing keys"""
+        results = [
+            {"sub": "01"},  # Missing some fields
+            {"sub": "02", "task": "nback"},  # Different fields
+            {}  # Empty dict
+        ]
+        
+        # Should not crash on any format
+        for format_type in ["json", "table", "csv", "tsv"]:
+            formatted = BQLFormatter.format(results, format_type)
+            assert isinstance(formatted, str)
+            # Some formats might return empty string for empty data, that's OK
+            
+        # Paths format might return empty for results without filepath/relative_path
+        paths_formatted = BQLFormatter.format(results, "paths")
+        assert isinstance(paths_formatted, str)
 
 
 class TestIntegration:

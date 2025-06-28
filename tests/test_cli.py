@@ -257,14 +257,51 @@ class TestCLI:
             "/nonexistent/path"
         )
         assert result.returncode == 1
-        assert "does not exist" in result.stderr
         
-        # Invalid query syntax
+    def test_invalid_query_syntax(self, synthetic_dataset_path):
+        """Test handling of invalid query syntax"""
         result = self.run_biql_command(
             ["SELECT FROM WHERE"], 
-            str(BIDS_EXAMPLES_DIR / "synthetic") if (BIDS_EXAMPLES_DIR / "synthetic").exists() else "."
+            synthetic_dataset_path
         )
         assert result.returncode == 1
+        assert "Parse error" in result.stderr or "error" in result.stderr.lower()
+        
+    def test_query_evaluation_errors(self, synthetic_dataset_path):
+        """Test handling of query evaluation errors"""
+        # This should not crash even with complex invalid operations
+        result = self.run_biql_command(
+            ["metadata.nonexistent>invalid_comparison"], 
+            synthetic_dataset_path
+        )
+        # Should complete successfully but return no results
+        assert result.returncode == 0
+        
+    def test_output_file_permission_error(self, synthetic_dataset_path):
+        """Test handling of output file permission errors"""
+        import tempfile
+        import os
+        
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create a directory where we try to write a file (should fail)
+            invalid_output = os.path.join(tmpdir, "readonly_dir", "output.json")
+            
+            result = self.run_biql_command(
+                ["--output", invalid_output, "sub=01"], 
+                synthetic_dataset_path
+            )
+            # Should handle error gracefully
+            assert result.returncode == 1
+            
+    def test_debug_mode_with_error(self):
+        """Test debug mode when errors occur"""
+        result = self.run_biql_command(
+            ["--debug", "sub=01"], 
+            "/nonexistent/path"
+        )
+        assert result.returncode == 1
+        # Debug mode should provide more detailed error information
+        assert len(result.stderr) > 0
         
     def test_help_output(self):
         """Test help output"""

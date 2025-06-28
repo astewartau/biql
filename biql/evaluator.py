@@ -268,10 +268,24 @@ class BQLEvaluator:
         
     def _evaluate_having(self, grouped_result: Dict, having_expr: Expression) -> bool:
         """Evaluate HAVING clause on grouped results"""
-        # For now, implement basic functionality
-        # This would need to be extended for full HAVING support
         if isinstance(having_expr, BinaryOp):
-            if having_expr.left.field == '_count':
+            # Handle COUNT(*) function calls
+            if isinstance(having_expr.left, FunctionCall) and having_expr.left.name == 'COUNT':
+                count = grouped_result.get('_count', 0)
+                threshold = having_expr.right.value
+                
+                if having_expr.operator == TokenType.GT:
+                    return count > threshold
+                elif having_expr.operator == TokenType.LT:
+                    return count < threshold
+                elif having_expr.operator == TokenType.GTE:
+                    return count >= threshold
+                elif having_expr.operator == TokenType.LTE:
+                    return count <= threshold
+                elif having_expr.operator == TokenType.EQ:
+                    return count == threshold
+            # Handle field access (legacy code path)
+            elif hasattr(having_expr.left, 'field') and having_expr.left.field == '_count':
                 count = grouped_result.get('_count', 0)
                 threshold = having_expr.right.value
                 
