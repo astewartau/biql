@@ -58,6 +58,10 @@ class BQLEvaluator:
         if query.select_clause:
             result_dicts = self._apply_select(result_dicts, query.select_clause)
             
+            # Apply DISTINCT if specified
+            if query.select_clause.distinct:
+                result_dicts = self._apply_distinct(result_dicts)
+            
         return result_dicts
         
     def _file_to_dict(self, file: BIDSFile) -> Dict[str, Any]:
@@ -352,3 +356,33 @@ class BQLEvaluator:
             selected_results.append(selected)
             
         return selected_results
+        
+    def _apply_distinct(self, results: List[Dict]) -> List[Dict]:
+        """Apply DISTINCT to remove duplicate rows"""
+        if not results:
+            return results
+            
+        # Convert each dict to a hashable representation
+        seen = set()
+        distinct_results = []
+        
+        for result in results:
+            # Create a hashable key from the result dict
+            # Sort items to ensure consistent ordering
+            try:
+                key = tuple(sorted(
+                    (k, tuple(v) if isinstance(v, list) else v) 
+                    for k, v in result.items()
+                ))
+                
+                if key not in seen:
+                    seen.add(key)
+                    distinct_results.append(result)
+            except TypeError:
+                # If values aren't hashable (nested dicts, etc.), fall back to string comparison
+                key = str(sorted(result.items()))
+                if key not in seen:
+                    seen.add(key)
+                    distinct_results.append(result)
+                    
+        return distinct_results

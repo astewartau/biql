@@ -17,6 +17,7 @@ class ASTNode:
 class SelectClause(ASTNode):
     """SELECT clause with list of items and optional aliases"""
     items: List[Tuple[str, Optional[str]]]  # (expression, alias)
+    distinct: bool = False
     
 
 @dataclass

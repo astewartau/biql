@@ -95,6 +95,13 @@ class BQLParser:
     def _parse_select(self) -> SelectClause:
         """Parse SELECT clause"""
         self._consume(TokenType.SELECT)
+        
+        # Check for DISTINCT
+        distinct = False
+        if self._current_token_type() == TokenType.DISTINCT:
+            self._consume(TokenType.DISTINCT)
+            distinct = True
+            
         items = []
         
         if self._current_token_type() == TokenType.STAR:
@@ -134,7 +141,7 @@ class BQLParser:
                     break
                 self._consume(TokenType.COMMA)
                 
-        return SelectClause(items)
+        return SelectClause(items, distinct)
         
     def _parse_expression(self) -> Expression:
         """Parse expression with precedence"""

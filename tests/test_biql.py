@@ -123,6 +123,25 @@ class TestBQLParser:
         with pytest.raises(BQLParseError):
             parser = BQLParser.from_string("SELECT FROM WHERE")
             parser.parse()
+            
+    def test_distinct_parsing(self):
+        """Test parsing SELECT DISTINCT queries"""
+        parser = BQLParser.from_string("SELECT DISTINCT sub, task")
+        query = parser.parse()
+        
+        assert query.select_clause is not None
+        assert query.select_clause.distinct is True
+        assert len(query.select_clause.items) == 2
+        assert query.select_clause.items[0] == ("sub", None)
+        assert query.select_clause.items[1] == ("task", None)
+        
+    def test_non_distinct_parsing(self):
+        """Test that regular SELECT queries have distinct=False"""
+        parser = BQLParser.from_string("SELECT sub, task")
+        query = parser.parse()
+        
+        assert query.select_clause is not None
+        assert query.select_clause.distinct is False
 
 
 class TestBIDSDataset:
@@ -408,6 +427,55 @@ class TestBQLEvaluator:
                         # If it's a list, all non-None values should be strings
                         non_none_values = [v for v in run_value if v is not None]
                         assert all(isinstance(v, str) for v in non_none_values)
+                        
+    def test_distinct_functionality(self, evaluator):
+        """Test DISTINCT functionality removes duplicate rows"""
+        # First get some results that might have duplicates
+        parser = BQLParser.from_string("SELECT datatype")
+        query = parser.parse()
+        regular_results = evaluator.evaluate(query)
+        
+        # Now get DISTINCT results
+        parser = BQLParser.from_string("SELECT DISTINCT datatype")
+        query = parser.parse()
+        distinct_results = evaluator.evaluate(query)
+        
+        # DISTINCT should have fewer or equal results
+        assert len(distinct_results) <= len(regular_results)
+        
+        # All results should be unique
+        seen_datatypes = set()
+        for result in distinct_results:
+            datatype = result.get("datatype")
+            assert datatype not in seen_datatypes, f"Duplicate datatype found: {datatype}"
+            seen_datatypes.add(datatype)
+            
+    def test_distinct_multiple_fields(self, evaluator):
+        """Test DISTINCT with multiple fields"""
+        parser = BQLParser.from_string("SELECT DISTINCT sub, datatype")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+        
+        # Check that all combinations are unique
+        seen_combinations = set()
+        for result in results:
+            combination = (result.get("sub"), result.get("datatype"))
+            assert combination not in seen_combinations, f"Duplicate combination: {combination}"
+            seen_combinations.add(combination)
+            
+    def test_distinct_with_where_clause(self, evaluator):
+        """Test DISTINCT combined with WHERE clause"""
+        parser = BQLParser.from_string("SELECT DISTINCT task WHERE datatype=func")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+        
+        # Should only have unique task values from functional files
+        seen_tasks = set()
+        for result in results:
+            task = result.get("task")
+            if task is not None:
+                assert task not in seen_tasks, f"Duplicate task found: {task}"
+                seen_tasks.add(task)
 
 
 class TestQSMWorkflow:
@@ -492,6 +560,71 @@ class TestQSMWorkflow:
             # Verify subject 02 group (with acquisition)  
             sub02_group = next(r for r in results if r["sub"] == "02" and r.get("acq") == "test")
             assert sub02_group["count"] == 2  # 1 echo × 2 parts
+            
+    def test_distinct_echo_times_discovery(self):
+        """Test DISTINCT for discovering unique EchoTime values (real QSM use case)"""
+        # Create test dataset with varying echo times
+        import tempfile
+        import json
+        from pathlib import Path
+        from biql.dataset import BIDSDataset
+        from biql.evaluator import BQLEvaluator
+        from biql.parser import BQLParser
+        
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir = Path(tmpdir)
+            
+            # Create dataset description
+            (tmpdir / "dataset_description.json").write_text(
+                json.dumps({"Name": "Echo Test", "BIDSVersion": "1.8.0"})
+            )
+            
+            # Create files with different echo times
+            echo_files = [
+                ("sub-01/anat/sub-01_echo-01_part-mag_MEGRE.nii", 0.005),
+                ("sub-01/anat/sub-01_echo-01_part-mag_MEGRE.json", 0.005),
+                ("sub-01/anat/sub-01_echo-02_part-mag_MEGRE.nii", 0.010),
+                ("sub-01/anat/sub-01_echo-02_part-mag_MEGRE.json", 0.010),
+                ("sub-02/anat/sub-02_echo-01_part-mag_MEGRE.nii", 0.005),  # Same as sub-01
+                ("sub-02/anat/sub-02_echo-01_part-mag_MEGRE.json", 0.005),
+                ("sub-02/anat/sub-02_echo-02_part-mag_MEGRE.nii", 0.015),  # Different
+                ("sub-02/anat/sub-02_echo-02_part-mag_MEGRE.json", 0.015),
+            ]
+            
+            for file_path, echo_time in echo_files:
+                full_path = tmpdir / file_path
+                full_path.parent.mkdir(parents=True, exist_ok=True)
+                
+                if file_path.endswith('.json'):
+                    metadata = {"EchoTime": echo_time, "MagneticFieldStrength": 3.0}
+                    full_path.write_text(json.dumps(metadata))
+                else:
+                    full_path.touch()
+            
+            # Test DISTINCT metadata.EchoTime
+            dataset = BIDSDataset(tmpdir)
+            evaluator = BQLEvaluator(dataset)
+            
+            parser = BQLParser.from_string("SELECT DISTINCT metadata.EchoTime WHERE suffix=MEGRE")
+            query = parser.parse()
+            results = evaluator.evaluate(query)
+            
+            # Should have 3 unique echo times: 0.005, 0.010, 0.015
+            echo_times = [r.get("metadata.EchoTime") for r in results if r.get("metadata.EchoTime") is not None]
+            assert len(echo_times) == 3
+            assert 0.005 in echo_times
+            assert 0.010 in echo_times
+            assert 0.015 in echo_times
+            
+            # Test DISTINCT echo (should be 01, 02)
+            parser = BQLParser.from_string("SELECT DISTINCT echo WHERE suffix=MEGRE")
+            query = parser.parse()
+            results = evaluator.evaluate(query)
+            
+            echo_numbers = [r.get("echo") for r in results if r.get("echo") is not None]
+            assert len(echo_numbers) == 2
+            assert "01" in echo_numbers
+            assert "02" in echo_numbers
 
 
 class TestBQLFormatter:
