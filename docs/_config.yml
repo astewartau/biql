@@ -1,0 +1,91 @@
+# Jekyll configuration for BIQL documentation
+
+title: "BIDS Query Language (BQL)"
+description: "A powerful SQL-like query language for BIDS neuroimaging datasets"
+url: "https://username.github.io"
+baseurl: "/biql"
+
+# Theme configuration
+theme: minima
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+  - jekyll-seo-tag
+
+# Navigation
+header_pages:
+  - quickstart.md
+  - language.md
+  - cli.md
+  - examples.md
+
+# Social links
+github_username: username
+twitter_username: bidsstandard
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+kramdown:
+  syntax_highlighter: rouge
+  syntax_highlighter_opts:
+    block:
+      line_numbers: false
+
+# Collections
+collections:
+  docs:
+    output: true
+    permalink: /:collection/:name/
+
+# Exclude from processing
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor/
+  - .sass-cache/
+  - .jekyll-cache/
+  - gemfiles/
+
+# Include
+include:
+  - _pages
+
+# Sass
+sass:
+  style: compressed
+
+# Timezone
+timezone: UTC
+
+# Pagination
+paginate: 10
+paginate_path: "/page:num/"
+
+# SEO settings
+lang: en_US
+author:
+  name: "BIQL Contributors"
+  email: "contributors@biql.org"
+
+# Social media
+social:
+  name: "BIDS Query Language"
+  links:
+    - https://github.com/username/biql
+
+# Google Analytics (optional)
+# google_analytics: UA-XXXXXXXX-X
+
+# Custom CSS
+sass:
+  sass_dir: _sass
+  style: compressed
+
+# Custom variables
+biql:
+  version: "1.0.0"
+  release_date: "2024"
+  license: "MIT"
+  repository: "https://github.com/username/biql"
