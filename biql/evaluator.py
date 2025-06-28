@@ -7,7 +7,8 @@ Evaluates parsed BIQL queries against BIDS datasets.
 import fnmatch
 import re
 from collections import defaultdict
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
+
 from .ast_nodes import *
 from .dataset import BIDSDataset, BIDSFile
 from .lexer import TokenType
@@ -15,80 +16,93 @@ from .lexer import TokenType
 
 class BIQLEvaluationError(Exception):
     """Exception raised for BIQL evaluation errors"""
+
     pass
 
 
 class BIQLEvaluator:
     """Evaluates BIQL queries against BIDS datasets"""
-    
+
     def __init__(self, dataset: BIDSDataset):
         self.dataset = dataset
-        
+
     def evaluate(self, query: Query) -> List[Dict[str, Any]]:
         """Evaluate a query and return results"""
         # Start with all files
         results = self.dataset.files
-        
+
         # Apply WHERE clause
         if query.where_clause:
-            results = [f for f in results if self._evaluate_expression(f, query.where_clause.condition)]
-            
+            results = [
+                f
+                for f in results
+                if self._evaluate_expression(f, query.where_clause.condition)
+            ]
+
         # Convert to dictionaries for further processing
         result_dicts = []
         for file in results:
             result_dict = self._file_to_dict(file)
             result_dicts.append(result_dict)
-            
+
         # Apply GROUP BY
         if query.group_by:
             result_dicts = self._apply_group_by(result_dicts, query.group_by)
-            
+
         # Apply HAVING
         if query.having:
             # Filter grouped results based on HAVING condition
-            result_dicts = [r for r in result_dicts if self._evaluate_having(r, query.having)]
-            
+            result_dicts = [
+                r for r in result_dicts if self._evaluate_having(r, query.having)
+            ]
+
         # Apply ORDER BY
         if query.order_by:
             for field, direction in reversed(query.order_by):
-                reverse = (direction == 'DESC')
-                result_dicts.sort(key=lambda x: self._get_sort_key(x, field), reverse=reverse)
-                
+                reverse = direction == "DESC"
+                result_dicts.sort(
+                    key=lambda x: self._get_sort_key(x, field), reverse=reverse
+                )
+
         # Apply SELECT
         if query.select_clause:
             result_dicts = self._apply_select(result_dicts, query.select_clause)
-            
+
             # Apply DISTINCT if specified
             if query.select_clause.distinct:
                 result_dicts = self._apply_distinct(result_dicts)
-            
+
         return result_dicts
-        
+
     def _file_to_dict(self, file: BIDSFile) -> Dict[str, Any]:
         """Convert BIDSFile to dictionary representation"""
         result_dict = {
-            'filepath': str(file.filepath),
-            'relative_path': str(file.relative_path),
-            'filename': file.filepath.name,
+            "filepath": str(file.filepath),
+            "relative_path": str(file.relative_path),
+            "filename": file.filepath.name,
             **file.entities,
-            'metadata': file.metadata
+            "metadata": file.metadata,
         }
-        
+
         # Add participant data if available
-        if 'sub' in file.entities and file.entities['sub'] in self.dataset.participants:
-            result_dict['participants'] = self.dataset.participants[file.entities['sub']]
-            
+        if "sub" in file.entities and file.entities["sub"] in self.dataset.participants:
+            result_dict["participants"] = self.dataset.participants[
+                file.entities["sub"]
+            ]
+
         return result_dict
-        
+
     def _evaluate_expression(self, file: BIDSFile, expr: Expression) -> bool:
         """Evaluate an expression against a file"""
         if isinstance(expr, BinaryOp):
             if expr.operator == TokenType.AND:
-                return (self._evaluate_expression(file, expr.left) and 
-                       self._evaluate_expression(file, expr.right))
+                return self._evaluate_expression(
+                    file, expr.left
+                ) and self._evaluate_expression(file, expr.right)
             elif expr.operator == TokenType.OR:
-                return (self._evaluate_expression(file, expr.left) or 
-                       self._evaluate_expression(file, expr.right))
+                return self._evaluate_expression(
+                    file, expr.left
+                ) or self._evaluate_expression(file, expr.right)
             else:
                 # Comparison operators
                 left_val = self._get_value(file, expr.left)
@@ -99,23 +113,23 @@ class BIQLEvaluator:
                 else:
                     right_val = self._get_value(file, expr.right)
                 return self._compare(left_val, expr.operator, right_val)
-                
+
         elif isinstance(expr, UnaryOp):
             if expr.operator == TokenType.NOT:
                 return not self._evaluate_expression(file, expr.operand)
-                
+
         elif isinstance(expr, FieldAccess):
             # Simple field existence check
             return self._get_value(file, expr) is not None
-            
+
         return False
-        
+
     def _get_value(self, file: BIDSFile, expr: Expression) -> Any:
         """Get value from file based on expression"""
         if isinstance(expr, FieldAccess):
             if expr.path:
                 # Metadata or participants access
-                if expr.field == 'metadata' and expr.path:
+                if expr.field == "metadata" and expr.path:
                     value = file.metadata
                     for part in expr.path:
                         if isinstance(value, dict) and part in value:
@@ -123,9 +137,12 @@ class BIQLEvaluator:
                         else:
                             return None
                     return value
-                elif expr.field == 'participants' and expr.path:
-                    if 'sub' in file.entities and file.entities['sub'] in self.dataset.participants:
-                        value = self.dataset.participants[file.entities['sub']]
+                elif expr.field == "participants" and expr.path:
+                    if (
+                        "sub" in file.entities
+                        and file.entities["sub"] in self.dataset.participants
+                    ):
+                        value = self.dataset.participants[file.entities["sub"]]
                         for part in expr.path:
                             if isinstance(value, dict) and part in value:
                                 value = value[part]
@@ -136,18 +153,18 @@ class BIQLEvaluator:
             else:
                 # Entity access - return the value from file entities
                 return file.entities.get(expr.field)
-                
+
         elif isinstance(expr, Literal):
             return expr.value
-            
+
         elif isinstance(expr, Range):
             return (expr.start, expr.end)
-            
+
         elif isinstance(expr, ListExpression):
             return [self._get_literal_value(item) for item in expr.items]
-            
+
         return None
-        
+
     def _get_literal_value(self, expr: Expression) -> Any:
         """Get literal value from expression"""
         if isinstance(expr, Literal):
@@ -155,7 +172,7 @@ class BIQLEvaluator:
         elif isinstance(expr, FieldAccess):
             return expr.field
         return str(expr)
-        
+
     def _compare(self, left: Any, operator: TokenType, right: Any) -> bool:
         """Compare two values based on operator"""
         # Handle None values
@@ -163,24 +180,24 @@ class BIQLEvaluator:
             return operator == TokenType.NEQ and right is not None
         if right is None:
             return operator == TokenType.NEQ and left is not None
-        
+
         # Convert FieldAccess to string literal when used as comparison value
-        if hasattr(right, 'field') and hasattr(right, 'path') and right.path is None:
-            # This is a bare identifier like 'func' in 'datatype=func' 
+        if hasattr(right, "field") and hasattr(right, "path") and right.path is None:
+            # This is a bare identifier like 'func' in 'datatype=func'
             right = right.field
-            
+
         # Handle IN operator with lists
         if operator == TokenType.IN and isinstance(right, list):
             return str(left) in [str(item) for item in right]
-            
+
         # Convert types if needed for numeric comparison
         if isinstance(right, (int, float)) and isinstance(left, str):
             try:
-                left = float(left) if '.' in left else int(left)
+                left = float(left) if "." in left else int(left)
             except ValueError:
                 # If conversion fails, fall back to string comparison
                 pass
-                
+
         # Range comparison
         if isinstance(right, tuple) and len(right) == 2:
             try:
@@ -188,29 +205,29 @@ class BIQLEvaluator:
                 return right[0] <= left_num <= right[1]
             except (ValueError, TypeError):
                 return False
-                
+
         # String pattern matching for equality
         if operator == TokenType.EQ and isinstance(right, str):
-            if '*' in right or '?' in right:
+            if "*" in right or "?" in right:
                 return fnmatch.fnmatch(str(left), right)
-                
+
         # Regular expression matching
         if operator == TokenType.MATCH and isinstance(right, str):
             try:
                 # Remove regex delimiters if present
                 pattern = right
-                if pattern.startswith('/') and pattern.endswith('/'):
+                if pattern.startswith("/") and pattern.endswith("/"):
                     pattern = pattern[1:-1]
                 return bool(re.match(pattern, str(left)))
             except re.error:
                 return False
-                
+
         # LIKE operator (SQL-style pattern matching)
         if operator == TokenType.LIKE and isinstance(right, str):
             # Convert SQL LIKE pattern to fnmatch pattern
-            pattern = right.replace('%', '*').replace('_', '?')
+            pattern = right.replace("%", "*").replace("_", "?")
             return fnmatch.fnmatch(str(left), pattern)
-                
+
         # Standard comparisons
         try:
             if operator == TokenType.EQ:
@@ -241,39 +258,44 @@ class BIQLEvaluator:
                     return left_str >= right_str
                 elif operator == TokenType.LTE:
                     return left_str <= right_str
-            except:
+            except (TypeError, ValueError):
                 return False
-            
+
         return False
-        
-    def _apply_group_by(self, results: List[Dict], group_fields: List[str]) -> List[Dict]:
+
+    def _apply_group_by(
+        self, results: List[Dict], group_fields: List[str]
+    ) -> List[Dict]:
         """Apply GROUP BY to results"""
         grouped = defaultdict(list)
-        
+
         for result in results:
             key = tuple(self._get_nested_value(result, field) for field in group_fields)
             grouped[key].append(result)
-            
+
         # Create aggregated results
         aggregated = []
         for key, group in grouped.items():
             agg_result = {}
             for i, field in enumerate(group_fields):
                 agg_result[field] = key[i]
-            agg_result['_count'] = len(group)
-            agg_result['_group'] = group
+            agg_result["_count"] = len(group)
+            agg_result["_group"] = group
             aggregated.append(agg_result)
-            
+
         return aggregated
-        
+
     def _evaluate_having(self, grouped_result: Dict, having_expr: Expression) -> bool:
         """Evaluate HAVING clause on grouped results"""
         if isinstance(having_expr, BinaryOp):
             # Handle COUNT(*) function calls
-            if isinstance(having_expr.left, FunctionCall) and having_expr.left.name == 'COUNT':
-                count = grouped_result.get('_count', 0)
+            if (
+                isinstance(having_expr.left, FunctionCall)
+                and having_expr.left.name == "COUNT"
+            ):
+                count = grouped_result.get("_count", 0)
                 threshold = having_expr.right.value
-                
+
                 if having_expr.operator == TokenType.GT:
                     return count > threshold
                 elif having_expr.operator == TokenType.LT:
@@ -285,10 +307,13 @@ class BIQLEvaluator:
                 elif having_expr.operator == TokenType.EQ:
                     return count == threshold
             # Handle field access (legacy code path)
-            elif hasattr(having_expr.left, 'field') and having_expr.left.field == '_count':
-                count = grouped_result.get('_count', 0)
+            elif (
+                hasattr(having_expr.left, "field")
+                and having_expr.left.field == "_count"
+            ):
+                count = grouped_result.get("_count", 0)
                 threshold = having_expr.right.value
-                
+
                 if having_expr.operator == TokenType.GT:
                     return count > threshold
                 elif having_expr.operator == TokenType.LT:
@@ -299,19 +324,19 @@ class BIQLEvaluator:
                     return count <= threshold
                 elif having_expr.operator == TokenType.EQ:
                     return count == threshold
-                    
+
         return True
-        
+
     def _get_sort_key(self, result: Dict, field: str) -> Any:
         """Get sort key for ORDER BY"""
         value = self._get_nested_value(result, field)
         if value is None:
-            return ''
+            return ""
         return value
-        
+
     def _get_nested_value(self, result: Dict, field: str) -> Any:
         """Get nested value using dot notation"""
-        parts = field.split('.')
+        parts = field.split(".")
         value = result
         for part in parts:
             if isinstance(value, dict) and part in value:
@@ -319,43 +344,45 @@ class BIQLEvaluator:
             else:
                 return None
         return value
-        
-    def _apply_select(self, results: List[Dict], select_clause: SelectClause) -> List[Dict]:
+
+    def _apply_select(
+        self, results: List[Dict], select_clause: SelectClause
+    ) -> List[Dict]:
         """Apply SELECT clause to results"""
         if not results:
             return results
-            
+
         selected_results = []
         for result in results:
             selected = {}
-            
+
             for item, alias in select_clause.items:
-                if item == '*':
+                if item == "*":
                     selected = result.copy()
-                elif item.startswith('COUNT('):
+                elif item.startswith("COUNT("):
                     # Handle aggregate functions
-                    if '_count' in result:
-                        key = alias if alias else 'count'
-                        selected[key] = result['_count']
+                    if "_count" in result:
+                        key = alias if alias else "count"
+                        selected[key] = result["_count"]
                     else:
-                        key = alias if alias else 'count'
+                        key = alias if alias else "count"
                         selected[key] = 1
                 else:
                     # Handle regular field selection
                     key = alias if alias else item
-                    
-                    # If this is a grouped result, aggregate non-grouped fields into arrays
-                    if '_group' in result:
+
+                    # If grouped result, aggregate non-grouped fields into arrays
+                    if "_group" in result:
                         # Collect all unique values for this field from the group
                         values = []
                         seen = set()
-                        for group_item in result['_group']:
+                        for group_item in result["_group"]:
                             value = self._get_nested_value(group_item, item)
                             if value is not None and value not in seen:
                                 values.append(value)
                                 seen.add(value)
-                        
-                        # For single values, don't use array; for multiple values, use array
+
+                        # Single values: string; multiple values: array
                         if len(values) == 1:
                             selected[key] = values[0]
                         elif len(values) > 1:
@@ -366,37 +393,39 @@ class BIQLEvaluator:
                         # Regular non-grouped result
                         value = self._get_nested_value(result, item)
                         selected[key] = value
-                    
+
             selected_results.append(selected)
-            
+
         return selected_results
-        
+
     def _apply_distinct(self, results: List[Dict]) -> List[Dict]:
         """Apply DISTINCT to remove duplicate rows"""
         if not results:
             return results
-            
+
         # Convert each dict to a hashable representation
         seen = set()
         distinct_results = []
-        
+
         for result in results:
             # Create a hashable key from the result dict
             # Sort items to ensure consistent ordering
             try:
-                key = tuple(sorted(
-                    (k, tuple(v) if isinstance(v, list) else v) 
-                    for k, v in result.items()
-                ))
-                
+                key = tuple(
+                    sorted(
+                        (k, tuple(v) if isinstance(v, list) else v)
+                        for k, v in result.items()
+                    )
+                )
+
                 if key not in seen:
                     seen.add(key)
                     distinct_results.append(result)
             except TypeError:
-                # If values aren't hashable (nested dicts, etc.), fall back to string comparison
+                # If values aren't hashable, fall back to string comparison
                 key = str(sorted(result.items()))
                 if key not in seen:
                     seen.add(key)
                     distinct_results.append(result)
-                    
+
         return distinct_results
