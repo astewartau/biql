@@ -1,3 +1,10 @@
+---
+layout: default
+title: CLI Reference
+nav_order: 4
+description: "Complete reference for the biql command-line tool"
+---
+
 # CLI Reference
 
 Complete reference for the `biql` command-line tool.

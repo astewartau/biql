@@ -1,8 +1,18 @@
+---
+layout: default
+title: Quickstart
+nav_order: 2
+description: "Get up and running with BQL in 5 minutes"
+---
+
 # Quickstart Guide
 
 Get up and running with BQL in 5 minutes! This guide will walk you through installation and your first queries.
 
 ## Installation
+
+{: .important }
+> BQL requires Python 3.8 or higher and works with any BIDS-compliant dataset.
 
 ### Using pip (Recommended)
 

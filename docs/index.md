@@ -1,3 +1,11 @@
+---
+layout: default
+title: Home
+nav_order: 1
+description: "BIDS Query Language - A powerful SQL-like query language for BIDS neuroimaging datasets"
+permalink: /
+---
+
 # BIDS Query Language (BQL)
 
 **A powerful SQL-like query language for BIDS neuroimaging datasets**
@@ -63,33 +71,15 @@ biql "SELECT sub, acq, COUNT(*) WHERE part=mag GROUP BY sub, acq" \
 
 ## Getting Started
 
+{: .highlight }
 Ready to start querying your BIDS data? Choose your path:
 
-<div class="grid-container">
-  <div class="grid-item">
-    <h3>🚀 Quickstart</h3>
-    <p>Get up and running in 5 minutes</p>
-    <a href="quickstart.html" class="btn">Start Here →</a>
-  </div>
-  
-  <div class="grid-item">
-    <h3>📖 Language Guide</h3>
-    <p>Complete BQL syntax reference</p>
-    <a href="language.html" class="btn">Learn BQL →</a>
-  </div>
-  
-  <div class="grid-item">
-    <h3>⚙️ CLI Reference</h3>
-    <p>Command-line tool documentation</p>
-    <a href="cli.html" class="btn">CLI Docs →</a>
-  </div>
-  
-  <div class="grid-item">
-    <h3>🔬 Examples</h3>
-    <p>Real-world query examples</p>
-    <a href="examples.html" class="btn">See Examples →</a>
-  </div>
-</div>
+| Guide | Description |
+|:------|:------------|
+| [🚀 Quickstart](quickstart.html) | Get up and running in 5 minutes |
+| [📖 Language Guide](language.html) | Complete BQL syntax reference |
+| [⚙️ CLI Reference](cli.html) | Command-line tool documentation |
+| [🔬 Examples](examples.html) | Real-world query examples |
 
 ## Community
 
@@ -101,39 +91,3 @@ Ready to start querying your BIDS data? Choose your path:
 
 BQL is open source software released under the [MIT License](https://opensource.org/licenses/MIT).
 
-<style>
-.grid-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
-  margin: 30px 0;
-}
-
-.grid-item {
-  background: #f8f9fa;
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
-  padding: 20px;
-  text-align: center;
-}
-
-.grid-item h3 {
-  margin-top: 0;
-  color: #495057;
-}
-
-.btn {
-  display: inline-block;
-  background: #007bff;
-  color: white;
-  padding: 10px 20px;
-  text-decoration: none;
-  border-radius: 5px;
-  font-weight: bold;
-}
-
-.btn:hover {
-  background: #0056b3;
-  color: white;
-}
-</style>

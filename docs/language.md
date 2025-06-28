@@ -1,3 +1,10 @@
+---
+layout: default
+title: Language Reference
+nav_order: 3
+description: "Complete syntax guide and reference for the BIDS Query Language"
+---
+
 # BQL Language Reference
 
 Complete syntax guide and reference for the BIDS Query Language.
@@ -224,7 +231,9 @@ SELECT sub, filename, COUNT(*) GROUP BY sub
 - **No values** → null
 - **Mixed null/non-null** → array contains only non-null values
 
-**Critical for Reconstruction Workflows:**
+{: .highlight }
+> **Critical for Reconstruction Workflows:** GROUP BY creates filename arrays
+
 ```sql
 -- QSM magnitude/phase grouping
 SELECT sub, ses, acq, filename, COUNT(*) as files

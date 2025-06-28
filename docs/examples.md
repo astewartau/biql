@@ -1,3 +1,10 @@
+---
+layout: default
+title: Examples
+nav_order: 5
+description: "Real-world BQL query patterns and cookbook recipes"
+---
+
 # Query Examples
 
 Real-world BQL query patterns and cookbook recipes for common neuroimaging workflows.
@@ -286,7 +293,9 @@ HAVING COUNT(*) >= 2
 ORDER BY sub, ses, acq, run
 ```
 
-**Critical: The `filename` field becomes an array containing all files for reconstruction:**
+{: .important }
+> **Critical**: The `filename` field becomes an array containing all files for reconstruction:
+
 ```json
 [
   {
