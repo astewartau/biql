@@ -6,7 +6,7 @@ Demonstrates basic usage of the BIDS Query Language Python API.
 """
 
 from pathlib import Path
-from biql import BIDSDataset, BQLEvaluator, BQLParser, BQLFormatter
+from biql import BIDSDataset, BIQLEvaluator, BIQLParser, BIQLFormatter
 
 # Example dataset path (adjust to your dataset)
 DATASET_PATH = Path("/home/ashley/repos/bids-examples/synthetic")
@@ -21,7 +21,7 @@ def main():
         
     print("Loading BIDS dataset...")
     dataset = BIDSDataset(DATASET_PATH)
-    evaluator = BQLEvaluator(dataset)
+    evaluator = BIQLEvaluator(dataset)
     
     print(f"Dataset loaded: {len(dataset.files)} files indexed")
     print(f"Subjects: {sorted(dataset.get_subjects())}")
@@ -30,7 +30,7 @@ def main():
     
     # Example 1: Simple entity query
     print("=== Example 1: Find all files for subject 01 ===")
-    parser = BQLParser.from_string("sub=01")
+    parser = BIQLParser.from_string("sub=01")
     query = parser.parse()
     results = evaluator.evaluate(query)
     
@@ -43,7 +43,7 @@ def main():
     
     # Example 2: Datatype filtering
     print("=== Example 2: Find all functional files ===")
-    parser = BQLParser.from_string("datatype=func")
+    parser = BIQLParser.from_string("datatype=func")
     query = parser.parse()
     results = evaluator.evaluate(query)
     
@@ -54,7 +54,7 @@ def main():
     
     # Example 3: Logical operators
     print("=== Example 3: Find T1w anatomical files ===")
-    parser = BQLParser.from_string("datatype=anat AND suffix=T1w")
+    parser = BIQLParser.from_string("datatype=anat AND suffix=T1w")
     query = parser.parse()
     results = evaluator.evaluate(query)
     
@@ -65,18 +65,18 @@ def main():
     
     # Example 4: SELECT specific fields
     print("=== Example 4: Select specific fields ===")
-    parser = BQLParser.from_string("SELECT sub, task, run, filepath WHERE datatype=func")
+    parser = BIQLParser.from_string("SELECT sub, task, run, filepath WHERE datatype=func")
     query = parser.parse()
     results = evaluator.evaluate(query)
     
     print("Functional files (sub, task, run):")
-    formatted = BQLFormatter.format(results[:5], "table")  # Show first 5 as table
+    formatted = BIQLFormatter.format(results[:5], "table")  # Show first 5 as table
     print(formatted)
     print()
     
     # Example 5: Grouping and counting
     print("=== Example 5: Count files by subject ===")
-    parser = BQLParser.from_string("SELECT sub, COUNT(*) GROUP BY sub")
+    parser = BIQLParser.from_string("SELECT sub, COUNT(*) GROUP BY sub")
     query = parser.parse()
     results = evaluator.evaluate(query)
     
@@ -86,7 +86,7 @@ def main():
     
     # Example 6: Pattern matching
     print("=== Example 6: Pattern matching ===")
-    parser = BQLParser.from_string("task~=/.*back.*/ OR suffix=*bold*")
+    parser = BIQLParser.from_string("task~=/.*back.*/ OR suffix=*bold*")
     query = parser.parse()
     results = evaluator.evaluate(query)
     
@@ -99,7 +99,7 @@ def main():
     
     # Example 7: Range queries
     print("=== Example 7: Range queries ===")
-    parser = BQLParser.from_string("run=[1:2] AND task=nback")
+    parser = BIQLParser.from_string("run=[1:2] AND task=nback")
     query = parser.parse()
     results = evaluator.evaluate(query)
     
@@ -111,7 +111,7 @@ def main():
     
     # Example 8: Metadata queries (if available)
     print("=== Example 8: Metadata queries ===")
-    parser = BQLParser.from_string("metadata.RepetitionTime>0")
+    parser = BIQLParser.from_string("metadata.RepetitionTime>0")
     query = parser.parse()
     results = evaluator.evaluate(query)
     
@@ -123,7 +123,7 @@ def main():
     
     # Example 9: Participant data queries (if available)
     print("=== Example 9: Participant data queries ===")
-    parser = BQLParser.from_string("participants.age>25")
+    parser = BIQLParser.from_string("participants.age>25")
     query = parser.parse()
     results = evaluator.evaluate(query)
     
@@ -138,7 +138,7 @@ def main():
     
     # Example 10: Complex query with ordering
     print("=== Example 10: Complex query with ordering ===")
-    parser = BQLParser.from_string(
+    parser = BIQLParser.from_string(
         "SELECT sub, ses, task, run, filepath "
         "WHERE datatype=func AND (task=nback OR task=rest) "
         "ORDER BY sub, task, run"
@@ -147,7 +147,7 @@ def main():
     results = evaluator.evaluate(query)
     
     print(f"Functional files (nback or rest), ordered:")
-    formatted = BQLFormatter.format(results[:10], "table")
+    formatted = BIQLFormatter.format(results[:10], "table")
     print(formatted)
 
 

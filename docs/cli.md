@@ -18,7 +18,7 @@ biql [OPTIONS] QUERY
 ## Arguments
 
 ### QUERY
-The BQL query string to execute. Can be quoted or unquoted:
+The BIQL query string to execute. Can be quoted or unquoted:
 
 ```bash
 # Simple queries (no quotes needed)
@@ -408,7 +408,7 @@ done
 
 ### Concurrent Query Support
 
-BQL supports multiple simultaneous queries safely:
+BIQL supports multiple simultaneous queries safely:
 
 ```bash
 # Run multiple queries in parallel

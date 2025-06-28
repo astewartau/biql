@@ -2,12 +2,12 @@
 layout: default
 title: Examples
 nav_order: 5
-description: "Real-world BQL query patterns and cookbook recipes"
+description: "Real-world BIQL query patterns and cookbook recipes"
 ---
 
 # Query Examples
 
-Real-world BQL query patterns and cookbook recipes for common neuroimaging workflows.
+Real-world BIQL query patterns and cookbook recipes for common neuroimaging workflows.
 
 ## Dataset Exploration
 
@@ -427,7 +427,7 @@ HAVING COUNT(DISTINCT suffix) = 2
 import subprocess
 import json
 
-# Get functional files via BQL
+# Get functional files via BIQL
 result = subprocess.run([
     'biql', 
     'SELECT sub, ses, task, run, filepath WHERE datatype=func',

@@ -1,7 +1,7 @@
 """
-Query Evaluator for BIDS Query Language (BQL)
+Query Evaluator for BIDS Query Language (BIQL)
 
-Evaluates parsed BQL queries against BIDS datasets.
+Evaluates parsed BIQL queries against BIDS datasets.
 """
 
 import fnmatch
@@ -13,13 +13,13 @@ from .dataset import BIDSDataset, BIDSFile
 from .lexer import TokenType
 
 
-class BQLEvaluationError(Exception):
-    """Exception raised for BQL evaluation errors"""
+class BIQLEvaluationError(Exception):
+    """Exception raised for BIQL evaluation errors"""
     pass
 
 
-class BQLEvaluator:
-    """Evaluates BQL queries against BIDS datasets"""
+class BIQLEvaluator:
+    """Evaluates BIQL queries against BIDS datasets"""
     
     def __init__(self, dataset: BIDSDataset):
         self.dataset = dataset

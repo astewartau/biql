@@ -2,12 +2,12 @@
 """
 QSM-specific BIQL Examples
 
-Demonstrates BQL queries tailored for QSM (Quantitative Susceptibility Mapping) datasets
+Demonstrates BIQL queries tailored for QSM (Quantitative Susceptibility Mapping) datasets
 based on QSMxT requirements.
 """
 
 from pathlib import Path
-from biql import BIDSDataset, BQLEvaluator, BQLParser, BQLFormatter
+from biql import BIDSDataset, BIQLEvaluator, BIQLParser, BIQLFormatter
 import tempfile
 import os
 import json
@@ -112,26 +112,26 @@ def main():
     try:
         print(f"Loading dataset from: {dataset_path}")
         dataset = BIDSDataset(dataset_path)
-        evaluator = BQLEvaluator(dataset)
+        evaluator = BIQLEvaluator(dataset)
         
         print(f"Dataset loaded: {len(dataset.files)} files indexed")
         print()
         
-        # QSM-specific BQL queries replacing the BIDS parser functionality
+        # QSM-specific BIQL queries replacing the BIDS parser functionality
         
         print("=== QSM Reconstruction Groups (equivalent to your BIDS parser) ===")
         print()
         
         # 1. Find all QSM-relevant files (magnitude and phase)
         print("1. All QSM-relevant files (mag and phase parts):")
-        parser = BQLParser.from_string("part=mag OR part=phase")
+        parser = BIQLParser.from_string("part=mag OR part=phase")
         query = parser.parse()
         results = evaluator.evaluate(query)
         print(f"Found {len(results)} QSM files")
         
         # Group by reconstruction units
         print("\n2. Group QSM files by reconstruction units:")
-        parser = BQLParser.from_string(
+        parser = BIQLParser.from_string(
             "SELECT sub, ses, acq, run, COUNT(*) "
             "WHERE (part=mag OR part=phase) AND (suffix=T2starw OR suffix=MEGRE) "
             "GROUP BY sub, ses, acq, run"
@@ -140,13 +140,13 @@ def main():
         results = evaluator.evaluate(query)
         
         print("QSM Reconstruction Groups:")
-        formatted = BQLFormatter.format(results, "table")
+        formatted = BIQLFormatter.format(results, "table")
         print(formatted)
         print()
         
         # 3. Find specific acquisition types
         print("3. T2* single-echo acquisitions:")
-        parser = BQLParser.from_string("suffix=T2starw AND part=mag")
+        parser = BIQLParser.from_string("suffix=T2starw AND part=mag")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -155,7 +155,7 @@ def main():
         print()
         
         print("4. Multi-echo MEGRE acquisitions:")
-        parser = BQLParser.from_string("suffix=MEGRE AND part=mag")
+        parser = BIQLParser.from_string("suffix=MEGRE AND part=mag")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -166,7 +166,7 @@ def main():
         
         # 4. Find magnitude-phase pairs for specific subjects
         print("5. Magnitude-phase pairs for subject 2:")
-        parser = BQLParser.from_string(
+        parser = BIQLParser.from_string(
             "SELECT sub, echo, part, filename "
             "WHERE sub=2 AND (part=mag OR part=phase) "
             "ORDER BY echo, part"
@@ -174,7 +174,7 @@ def main():
         query = parser.parse()
         results = evaluator.evaluate(query)
         
-        formatted = BQLFormatter.format(results, "table")
+        formatted = BIQLFormatter.format(results, "table")
         print(formatted)
         print()
         
@@ -183,7 +183,7 @@ def main():
         
         # This is more complex - we need to find groups where both mag and phase exist
         # First get all mag files
-        parser = BQLParser.from_string("part=mag AND (suffix=T2starw OR suffix=MEGRE)")
+        parser = BIQLParser.from_string("part=mag AND (suffix=T2starw OR suffix=MEGRE)")
         query = parser.parse()
         mag_results = evaluator.evaluate(query)
         
@@ -205,7 +205,7 @@ def main():
                 conditions.append(f"suffix={mag_file['suffix']}")
             
             phase_query = " AND ".join(conditions)
-            parser = BQLParser.from_string(phase_query)
+            parser = BIQLParser.from_string(phase_query)
             query = parser.parse()
             phase_results = evaluator.evaluate(query)
             
@@ -238,13 +238,13 @@ def main():
                 unique_groups.append(group)
         
         print(f"Found {len(unique_groups)} complete QSM reconstruction groups:")
-        formatted = BQLFormatter.format(unique_groups, "table")
+        formatted = BIQLFormatter.format(unique_groups, "table")
         print(formatted)
         print()
         
         # 6. Find derivatives/masks
         print("7. QSM processing derivatives (masks):")
-        parser = BQLParser.from_string("suffix=mask")
+        parser = BIQLParser.from_string("suffix=mask")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -257,7 +257,7 @@ def main():
         
         # 7. Complex query: Multi-echo acquisitions with specific parameters
         print("8. Multi-echo MEGRE with multiple acquisitions:")
-        parser = BQLParser.from_string(
+        parser = BIQLParser.from_string(
             "SELECT sub, acq, echo, part, filename "
             "WHERE suffix=MEGRE AND acq~=/myg.*/ "
             "ORDER BY sub, acq, echo, part"
@@ -266,7 +266,7 @@ def main():
         results = evaluator.evaluate(query)
         
         if results:
-            formatted = BQLFormatter.format(results, "table")
+            formatted = BIQLFormatter.format(results, "table")
             print(formatted)
         else:
             print("  No multi-acquisition MEGRE found")
@@ -277,7 +277,7 @@ def main():
         print("   This shows the logical groups your parser would create:")
         
         # Get unique combinations of grouping variables
-        parser = BQLParser.from_string(
+        parser = BIQLParser.from_string(
             "SELECT sub, ses, acq, run, suffix "
             "WHERE (part=mag OR part=phase) AND (suffix=T2starw OR suffix=MEGRE) "
             "GROUP BY sub, ses, acq, run, suffix"
@@ -306,7 +306,7 @@ def main():
             conditions.append("(part=mag OR part=phase)")
             
             detail_query = " AND ".join(conditions)
-            parser = BQLParser.from_string(f"SELECT part, echo, filename WHERE {detail_query}")
+            parser = BIQLParser.from_string(f"SELECT part, echo, filename WHERE {detail_query}")
             query = parser.parse()
             detail_results = evaluator.evaluate(query)
             

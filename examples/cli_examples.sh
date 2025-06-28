@@ -1,6 +1,6 @@
 #!/bin/bash
 """
-CLI Examples for BIDS Query Language (BQL)
+CLI Examples for BIDS Query Language (BIQL)
 
 Demonstrates command-line usage of biql with various query types.
 """

@@ -5,7 +5,7 @@ nav_order: 3
 description: "Complete syntax guide and reference for the BIDS Query Language"
 ---
 
-# BQL Language Reference
+# BIQL Language Reference
 
 Complete syntax guide and reference for the BIDS Query Language.
 
@@ -26,7 +26,7 @@ Complete syntax guide and reference for the BIDS Query Language.
 
 ## Query Structure
 
-BQL queries follow a familiar SQL-like structure:
+BIQL queries follow a familiar SQL-like structure:
 
 ```sql
 [SELECT [DISTINCT] field1, field2, ...]
@@ -365,7 +365,7 @@ SELECT DISTINCT task WHERE datatype=func
 
 ### Automatic Type Detection
 
-BQL automatically detects and converts data types:
+BIQL automatically detects and converts data types:
 
 ```sql
 -- String comparison
@@ -387,7 +387,7 @@ metadata.SliceEncodingDirection=true
 
 ## BIDS Entities
 
-BQL provides direct access to all BIDS entities:
+BIQL provides direct access to all BIDS entities:
 
 ### Standard Entities
 
@@ -484,7 +484,7 @@ GROUP BY metadata.RepetitionTime
 
 ### Metadata Inheritance
 
-BQL follows BIDS inheritance rules:
+BIQL follows BIDS inheritance rules:
 - Dataset-level metadata applies to all files
 - Subject/session-level metadata overrides dataset-level
 - File-specific metadata has highest priority
@@ -588,7 +588,7 @@ ORDER BY metadata.EchoTime
 
 ## Error Handling
 
-BQL gracefully handles common issues without crashing:
+BIQL gracefully handles common issues without crashing:
 
 ### Graceful Failure Modes
 

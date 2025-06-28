@@ -1,5 +1,5 @@
 """
-CLI tests for BIDS Query Language (BQL)
+CLI tests for BIDS Query Language (BIQL)
 
 Tests the command-line interface functionality.
 """

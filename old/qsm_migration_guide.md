@@ -199,15 +199,15 @@ ORDER BY metadata.EchoTime
 ## Example Integration
 
 ```python
-from biql import BIDSDataset, BQLEvaluator, BQLParser
+from biql import BIDSDataset, BIQLEvaluator, BIQLParser
 
 # Replace your parse_bids_directory() function
 def get_qsm_groups(bids_dir):
     dataset = BIDSDataset(bids_dir)
-    evaluator = BQLEvaluator(dataset)
+    evaluator = BIQLEvaluator(dataset)
     
     # Get QSM reconstruction groups
-    parser = BQLParser.from_string(
+    parser = BIQLParser.from_string(
         "SELECT sub, ses, acq, run, COUNT(*) "
         "WHERE (part=mag OR part=phase) AND (suffix=T2starw OR suffix=MEGRE) "
         "GROUP BY sub, ses, acq, run"

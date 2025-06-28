@@ -1,7 +1,7 @@
 """
-Lexer for BIDS Query Language (BQL)
+Lexer for BIDS Query Language (BIQL)
 
-Tokenizes BQL query strings into a stream of tokens for parsing.
+Tokenizes BIQL query strings into a stream of tokens for parsing.
 """
 
 from dataclasses import dataclass
@@ -74,8 +74,8 @@ class Token:
     position: int
 
 
-class BQLLexer:
-    """Tokenizes BQL queries"""
+class BIQLLexer:
+    """Tokenizes BIQL queries"""
     
     def __init__(self, query: str):
         self.query = query

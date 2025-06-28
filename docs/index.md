@@ -6,7 +6,7 @@ description: "BIDS Query Language - A powerful SQL-like query language for BIDS 
 permalink: /
 ---
 
-# BIDS Query Language (BQL)
+# BIDS Query Language (BIQL)
 
 **A powerful SQL-like query language for BIDS neuroimaging datasets**
 
@@ -16,9 +16,9 @@ permalink: /
 
 ---
 
-## What is BQL?
+## What is BIQL?
 
-BIDS Query Language (BQL) is a domain-specific query language designed for the [Brain Imaging Data Structure (BIDS)](https://bids.neuroimaging.io/). It provides a familiar SQL-like syntax for finding, filtering, and analyzing neuroimaging datasets with unprecedented ease and power.
+BIDS Query Language (BIQL) is a domain-specific query language designed for the [Brain Imaging Data Structure (BIDS)](https://bids.neuroimaging.io/). It provides a familiar SQL-like syntax for finding, filtering, and analyzing neuroimaging datasets with unprecedented ease and power.
 
 ```sql
 -- Find all functional scans from specific subjects
@@ -49,7 +49,7 @@ GROUP BY sub, ses, acq
 ## Quick Example
 
 ```bash
-# Install BQL
+# Install BIQL
 pip install biql
 
 # Query your BIDS dataset
@@ -77,7 +77,7 @@ Ready to start querying your BIDS data? Choose your path:
 | Guide | Description |
 |:------|:------------|
 | [🚀 Quickstart](quickstart.html) | Get up and running in 5 minutes |
-| [📖 Language Guide](language.html) | Complete BQL syntax reference |
+| [📖 Language Guide](language.html) | Complete BIQL syntax reference |
 | [⚙️ CLI Reference](cli.html) | Command-line tool documentation |
 | [🔬 Examples](examples.html) | Real-world query examples |
 
@@ -89,5 +89,5 @@ Ready to start querying your BIDS data? Choose your path:
 
 ## License
 
-BQL is open source software released under the [MIT License](https://opensource.org/licenses/MIT).
+BIQL is open source software released under the [MIT License](https://opensource.org/licenses/MIT).
 

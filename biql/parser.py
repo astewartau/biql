@@ -1,30 +1,30 @@
 """
-Parser for BIDS Query Language (BQL)
+Parser for BIDS Query Language (BIQL)
 
-Converts tokenized BQL queries into Abstract Syntax Trees (AST).
+Converts tokenized BIQL queries into Abstract Syntax Trees (AST).
 """
 
 from typing import List
-from .lexer import Token, TokenType, BQLLexer
+from .lexer import Token, TokenType, BIQLLexer
 from .ast_nodes import *
 
 
-class BQLParseError(Exception):
-    """Exception raised for BQL parsing errors"""
+class BIQLParseError(Exception):
+    """Exception raised for BIQL parsing errors"""
     pass
 
 
-class BQLParser:
-    """Parses BQL queries into AST"""
+class BIQLParser:
+    """Parses BIQL queries into AST"""
     
     def __init__(self, tokens: List[Token]):
         self.tokens = tokens
         self.position = 0
         
     @classmethod
-    def from_string(cls, query: str) -> 'BQLParser':
+    def from_string(cls, query: str) -> 'BIQLParser':
         """Create parser from query string"""
-        lexer = BQLLexer(query)
+        lexer = BIQLLexer(query)
         tokens = lexer.tokenize()
         return cls(tokens)
         
@@ -82,7 +82,7 @@ class BQLParser:
         """Consume token of expected type or raise error"""
         token = self._current_token()
         if token.type != expected:
-            raise BQLParseError(f"Expected {expected}, got {token.type} at position {token.position}")
+            raise BIQLParseError(f"Expected {expected}, got {token.type} at position {token.position}")
         self.position += 1
         return token
         
@@ -232,7 +232,7 @@ class BQLParser:
             token = self._consume(TokenType.NUMBER)
             return Literal(token.value)
             
-        raise BQLParseError(f"Unexpected token: {self._current_token()}")
+        raise BIQLParseError(f"Unexpected token: {self._current_token()}")
         
     def _parse_field_or_literal(self) -> Expression:
         """Parse field access expression or wildcard pattern"""

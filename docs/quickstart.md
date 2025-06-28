@@ -2,17 +2,17 @@
 layout: default
 title: Quickstart
 nav_order: 2
-description: "Get up and running with BQL in 5 minutes"
+description: "Get up and running with BIQL in 5 minutes"
 ---
 
 # Quickstart Guide
 
-Get up and running with BQL in 5 minutes! This guide will walk you through installation and your first queries.
+Get up and running with BIQL in 5 minutes! This guide will walk you through installation and your first queries.
 
 ## Installation
 
 {: .important }
-> BQL requires Python 3.8 or higher and works with any BIDS-compliant dataset.
+> BIQL requires Python 3.8 or higher and works with any BIDS-compliant dataset.
 
 ### Using pip (Recommended)
 
@@ -215,7 +215,7 @@ biql "SELECT sub, echo, part, filename \
 
 Now that you've got the basics down, explore more advanced features:
 
-- 📖 **[Language Reference](language.html)** - Complete BQL syntax guide
+- 📖 **[Language Reference](language.html)** - Complete BIQL syntax guide
 - ⚙️ **[CLI Reference](cli.html)** - All command-line options
 - 🔬 **[Examples](examples.html)** - Real-world query cookbook
 - 🧠 **[QSM Guide](qsm_migration_guide.html)** - Specialized QSM workflows
@@ -235,4 +235,4 @@ Now that you've got the basics down, explore more advanced features:
 - **Debug Mode**: Add `--debug` for detailed execution information
 - **GitHub Issues**: [Report bugs or request features](https://github.com/user/biql/issues)
 
-Ready to become a BQL expert? Continue with the [Language Reference](language.html)!
+Ready to become a BIQL expert? Continue with the [Language Reference](language.html)!

@@ -1,7 +1,7 @@
 """
-Comprehensive tests for BIDS Query Language (BQL)
+Comprehensive tests for BIDS Query Language (BIQL)
 
-Tests all components of the BQL implementation using real BIDS examples.
+Tests all components of the BIQL implementation using real BIDS examples.
 """
 
 import json
@@ -12,22 +12,22 @@ from pathlib import Path
 from typing import List, Dict, Any
 
 from biql.dataset import BIDSDataset, BIDSFile
-from biql.evaluator import BQLEvaluator
-from biql.formatter import BQLFormatter
-from biql.lexer import BQLLexer, TokenType
-from biql.parser import BQLParser, BQLParseError
+from biql.evaluator import BIQLEvaluator
+from biql.formatter import BIQLFormatter
+from biql.lexer import BIQLLexer, TokenType
+from biql.parser import BIQLParser, BIQLParseError
 from biql.cli import main
 
 # Test constants
 BIDS_EXAMPLES_DIR = Path("/home/ashley/repos/bids-examples/")
 
 
-class TestBQLLexer:
-    """Test the BQL lexer functionality"""
+class TestBIQLLexer:
+    """Test the BIQL lexer functionality"""
     
     def test_basic_tokenization(self):
         """Test basic token recognition"""
-        lexer = BQLLexer("sub=01 AND task=rest")
+        lexer = BIQLLexer("sub=01 AND task=rest")
         tokens = lexer.tokenize()
         
         token_types = [t.type for t in tokens if t.type != TokenType.EOF]
@@ -40,7 +40,7 @@ class TestBQLLexer:
         
     def test_string_literals(self):
         """Test string literal tokenization"""
-        lexer = BQLLexer('task="n-back" OR suffix="T1w"')
+        lexer = BIQLLexer('task="n-back" OR suffix="T1w"')
         tokens = lexer.tokenize()
         
         string_tokens = [t for t in tokens if t.type == TokenType.STRING]
@@ -50,7 +50,7 @@ class TestBQLLexer:
         
     def test_operators(self):
         """Test operator tokenization"""
-        lexer = BQLLexer("metadata.RepetitionTime>=2.0 AND run<=[1:3]")
+        lexer = BIQLLexer("metadata.RepetitionTime>=2.0 AND run<=[1:3]")
         tokens = lexer.tokenize()
         
         operator_tokens = [t for t in tokens if t.type in [TokenType.GTE, TokenType.LTE]]
@@ -59,7 +59,7 @@ class TestBQLLexer:
     def test_complex_query(self):
         """Test complex query tokenization"""
         query = "SELECT sub, ses, filepath WHERE (task=nback OR task=rest) AND metadata.RepetitionTime<3.0"
-        lexer = BQLLexer(query)
+        lexer = BIQLLexer(query)
         tokens = lexer.tokenize()
         
         assert any(t.type == TokenType.SELECT for t in tokens)
@@ -68,12 +68,12 @@ class TestBQLLexer:
         assert any(t.type == TokenType.RPAREN for t in tokens)
 
 
-class TestBQLParser:
-    """Test the BQL parser functionality"""
+class TestBIQLParser:
+    """Test the BIQL parser functionality"""
     
     def test_simple_query_parsing(self):
         """Test parsing simple queries"""
-        parser = BQLParser.from_string("sub=01")
+        parser = BIQLParser.from_string("sub=01")
         query = parser.parse()
         
         assert query.where_clause is not None
@@ -81,7 +81,7 @@ class TestBQLParser:
         
     def test_select_query_parsing(self):
         """Test parsing SELECT queries"""
-        parser = BQLParser.from_string("SELECT sub, task, filepath WHERE datatype=func")
+        parser = BIQLParser.from_string("SELECT sub, task, filepath WHERE datatype=func")
         query = parser.parse()
         
         assert query.select_clause is not None
@@ -90,14 +90,14 @@ class TestBQLParser:
         
     def test_complex_where_clause(self):
         """Test parsing complex WHERE clauses"""
-        parser = BQLParser.from_string("(sub=01 OR sub=02) AND task=nback")
+        parser = BIQLParser.from_string("(sub=01 OR sub=02) AND task=nback")
         query = parser.parse()
         
         assert query.where_clause is not None
         
     def test_group_by_parsing(self):
         """Test parsing GROUP BY clauses"""
-        parser = BQLParser.from_string("SELECT sub, COUNT(*) GROUP BY sub")
+        parser = BIQLParser.from_string("SELECT sub, COUNT(*) GROUP BY sub")
         query = parser.parse()
         
         assert query.group_by is not None
@@ -105,7 +105,7 @@ class TestBQLParser:
         
     def test_order_by_parsing(self):
         """Test parsing ORDER BY clauses"""
-        parser = BQLParser.from_string("sub=01 ORDER BY run DESC")
+        parser = BIQLParser.from_string("sub=01 ORDER BY run DESC")
         query = parser.parse()
         
         assert query.order_by is not None
@@ -113,20 +113,20 @@ class TestBQLParser:
         
     def test_format_parsing(self):
         """Test parsing FORMAT clauses"""
-        parser = BQLParser.from_string("sub=01 FORMAT table")
+        parser = BIQLParser.from_string("sub=01 FORMAT table")
         query = parser.parse()
         
         assert query.format == "table"
         
     def test_invalid_syntax(self):
         """Test that invalid syntax raises errors"""
-        with pytest.raises(BQLParseError):
-            parser = BQLParser.from_string("SELECT FROM WHERE")
+        with pytest.raises(BIQLParseError):
+            parser = BIQLParser.from_string("SELECT FROM WHERE")
             parser.parse()
             
     def test_distinct_parsing(self):
         """Test parsing SELECT DISTINCT queries"""
-        parser = BQLParser.from_string("SELECT DISTINCT sub, task")
+        parser = BIQLParser.from_string("SELECT DISTINCT sub, task")
         query = parser.parse()
         
         assert query.select_clause is not None
@@ -137,7 +137,7 @@ class TestBQLParser:
         
     def test_non_distinct_parsing(self):
         """Test that regular SELECT queries have distinct=False"""
-        parser = BQLParser.from_string("SELECT sub, task")
+        parser = BIQLParser.from_string("SELECT sub, task")
         query = parser.parse()
         
         assert query.select_clause is not None
@@ -145,7 +145,7 @@ class TestBQLParser:
         
     def test_having_clause_parsing(self):
         """Test parsing HAVING clauses"""
-        parser = BQLParser.from_string("SELECT sub, COUNT(*) GROUP BY sub HAVING COUNT(*) > 2")
+        parser = BIQLParser.from_string("SELECT sub, COUNT(*) GROUP BY sub HAVING COUNT(*) > 2")
         query = parser.parse()
         
         assert query.group_by is not None
@@ -154,7 +154,7 @@ class TestBQLParser:
     def test_function_call_parsing_with_arguments(self):
         """Test parsing function calls with different argument types"""
         # Function with STAR argument
-        parser = BQLParser.from_string("SELECT COUNT(*)")
+        parser = BIQLParser.from_string("SELECT COUNT(*)")
         query = parser.parse()
         
         assert query.select_clause is not None
@@ -162,7 +162,7 @@ class TestBQLParser:
         assert query.select_clause.items[0][0] == "COUNT(*)"
         
         # Function with field argument
-        parser = BQLParser.from_string("SELECT AVG(metadata.RepetitionTime)")
+        parser = BIQLParser.from_string("SELECT AVG(metadata.RepetitionTime)")
         query = parser.parse()
         
         assert query.select_clause is not None
@@ -172,7 +172,7 @@ class TestBQLParser:
         
     def test_not_operator_parsing(self):
         """Test parsing NOT operator"""
-        parser = BQLParser.from_string("NOT datatype=func")
+        parser = BIQLParser.from_string("NOT datatype=func")
         query = parser.parse()
         
         assert query.where_clause is not None
@@ -180,7 +180,7 @@ class TestBQLParser:
         
     def test_complex_function_calls_in_select(self):
         """Test function calls in SELECT with aliases"""
-        parser = BQLParser.from_string("SELECT COUNT(*) AS total_files, sub")
+        parser = BIQLParser.from_string("SELECT COUNT(*) AS total_files, sub")
         query = parser.parse()
         
         assert query.select_clause is not None
@@ -190,7 +190,7 @@ class TestBQLParser:
         
     def test_list_expression_parsing(self):
         """Test parsing list expressions in IN clauses"""
-        parser = BQLParser.from_string("sub IN [01, 02, 03]")
+        parser = BIQLParser.from_string("sub IN [01, 02, 03]")
         query = parser.parse()
         
         assert query.where_clause is not None
@@ -199,13 +199,13 @@ class TestBQLParser:
     def test_wildcard_pattern_parsing_edge_cases(self):
         """Test wildcard pattern parsing with mixed patterns"""
         # Test identifier followed by wildcard
-        parser = BQLParser.from_string("suffix=bold*")
+        parser = BIQLParser.from_string("suffix=bold*")
         query = parser.parse()
         
         assert query.where_clause is not None
         
         # Test pattern with question marks
-        parser = BQLParser.from_string("suffix=T?w")
+        parser = BIQLParser.from_string("suffix=T?w")
         query = parser.parse()
         
         assert query.where_clause is not None
@@ -213,7 +213,7 @@ class TestBQLParser:
     def test_multiple_comma_separated_items(self):
         """Test parsing multiple comma-separated items in various contexts"""
         # Multiple ORDER BY fields
-        parser = BQLParser.from_string("sub=01 ORDER BY sub ASC, ses DESC, run ASC")
+        parser = BIQLParser.from_string("sub=01 ORDER BY sub ASC, ses DESC, run ASC")
         query = parser.parse()
         
         assert query.order_by is not None
@@ -223,7 +223,7 @@ class TestBQLParser:
         assert query.order_by[2] == ("run", "ASC")
         
         # Multiple GROUP BY fields
-        parser = BQLParser.from_string("SELECT COUNT(*) GROUP BY sub, ses, datatype")
+        parser = BIQLParser.from_string("SELECT COUNT(*) GROUP BY sub, ses, datatype")
         query = parser.parse()
         
         assert query.group_by is not None
@@ -300,8 +300,8 @@ class TestBIDSDataset:
             assert "task" in task_file.entities
 
 
-class TestBQLEvaluator:
-    """Test BQL query evaluation"""
+class TestBIQLEvaluator:
+    """Test BIQL query evaluation"""
     
     @pytest.fixture
     def synthetic_dataset(self):
@@ -312,12 +312,12 @@ class TestBQLEvaluator:
         
     @pytest.fixture
     def evaluator(self, synthetic_dataset):
-        """Fixture for BQL evaluator"""
-        return BQLEvaluator(synthetic_dataset)
+        """Fixture for BIQL evaluator"""
+        return BIQLEvaluator(synthetic_dataset)
         
     def test_simple_entity_query(self, evaluator):
         """Test simple entity-based queries"""
-        parser = BQLParser.from_string("sub=01")
+        parser = BIQLParser.from_string("sub=01")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -327,7 +327,7 @@ class TestBQLEvaluator:
             
     def test_datatype_filtering(self, evaluator):
         """Test datatype filtering"""
-        parser = BQLParser.from_string("datatype=func")
+        parser = BIQLParser.from_string("datatype=func")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -337,7 +337,7 @@ class TestBQLEvaluator:
             
     def test_task_filtering(self, evaluator):
         """Test task filtering"""
-        parser = BQLParser.from_string("task=nback")
+        parser = BIQLParser.from_string("task=nback")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -347,7 +347,7 @@ class TestBQLEvaluator:
             
     def test_logical_operators(self, evaluator):
         """Test logical AND/OR operators"""
-        parser = BQLParser.from_string("sub=01 AND datatype=func")
+        parser = BIQLParser.from_string("sub=01 AND datatype=func")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -355,7 +355,7 @@ class TestBQLEvaluator:
             assert result["sub"] == "01"
             assert result["datatype"] == "func"
             
-        parser = BQLParser.from_string("task=nback OR task=rest")
+        parser = BIQLParser.from_string("task=nback OR task=rest")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -364,7 +364,7 @@ class TestBQLEvaluator:
             
     def test_range_queries(self, evaluator):
         """Test range queries"""
-        parser = BQLParser.from_string("run=[1:2]")
+        parser = BIQLParser.from_string("run=[1:2]")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -375,7 +375,7 @@ class TestBQLEvaluator:
                 
     def test_wildcard_matching(self, evaluator):
         """Test wildcard pattern matching"""
-        parser = BQLParser.from_string("suffix=*bold*")
+        parser = BIQLParser.from_string("suffix=*bold*")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -385,7 +385,7 @@ class TestBQLEvaluator:
                 
     def test_metadata_queries(self, evaluator):
         """Test metadata queries"""
-        parser = BQLParser.from_string("metadata.RepetitionTime>0")
+        parser = BIQLParser.from_string("metadata.RepetitionTime>0")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -398,7 +398,7 @@ class TestBQLEvaluator:
                 
     def test_participants_queries(self, evaluator):
         """Test participants data queries"""
-        parser = BQLParser.from_string("participants.age>20")
+        parser = BIQLParser.from_string("participants.age>20")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -409,7 +409,7 @@ class TestBQLEvaluator:
                 
     def test_select_clause(self, evaluator):
         """Test SELECT clause functionality"""
-        parser = BQLParser.from_string("SELECT sub, task, filepath WHERE datatype=func")
+        parser = BIQLParser.from_string("SELECT sub, task, filepath WHERE datatype=func")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -421,7 +421,7 @@ class TestBQLEvaluator:
             
     def test_group_by_functionality(self, evaluator):
         """Test GROUP BY functionality"""
-        parser = BQLParser.from_string("SELECT sub, COUNT(*) GROUP BY sub")
+        parser = BIQLParser.from_string("SELECT sub, COUNT(*) GROUP BY sub")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -433,7 +433,7 @@ class TestBQLEvaluator:
             
     def test_order_by_functionality(self, evaluator):
         """Test ORDER BY functionality"""
-        parser = BQLParser.from_string("datatype=func ORDER BY sub ASC")
+        parser = BIQLParser.from_string("datatype=func ORDER BY sub ASC")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -444,7 +444,7 @@ class TestBQLEvaluator:
             
     def test_group_by_auto_aggregation(self, evaluator):
         """Test auto-aggregation of non-grouped fields in GROUP BY queries"""
-        parser = BQLParser.from_string("SELECT sub, task, filepath, COUNT(*) WHERE datatype=func GROUP BY sub")
+        parser = BIQLParser.from_string("SELECT sub, task, filepath, COUNT(*) WHERE datatype=func GROUP BY sub")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -471,7 +471,7 @@ class TestBQLEvaluator:
             
     def test_group_by_single_value_no_array(self, evaluator):
         """Test that single values don't become arrays in GROUP BY results"""
-        parser = BQLParser.from_string("SELECT sub, datatype, COUNT(*) WHERE datatype=func GROUP BY sub, datatype")
+        parser = BIQLParser.from_string("SELECT sub, datatype, COUNT(*) WHERE datatype=func GROUP BY sub, datatype")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -486,7 +486,7 @@ class TestBQLEvaluator:
     def test_group_by_multiple_values_array(self, evaluator):
         """Test that multiple values become arrays in GROUP BY results"""
         # Create test scenario with mixed datatypes
-        parser = BQLParser.from_string("SELECT sub, datatype, COUNT(*) GROUP BY sub")
+        parser = BIQLParser.from_string("SELECT sub, datatype, COUNT(*) GROUP BY sub")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -502,7 +502,7 @@ class TestBQLEvaluator:
                     
     def test_group_by_preserves_null_handling(self, evaluator):
         """Test that None values are handled correctly in auto-aggregation"""
-        parser = BQLParser.from_string("SELECT sub, run, COUNT(*) GROUP BY sub")
+        parser = BIQLParser.from_string("SELECT sub, run, COUNT(*) GROUP BY sub")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -521,12 +521,12 @@ class TestBQLEvaluator:
     def test_distinct_functionality(self, evaluator):
         """Test DISTINCT functionality removes duplicate rows"""
         # First get some results that might have duplicates
-        parser = BQLParser.from_string("SELECT datatype")
+        parser = BIQLParser.from_string("SELECT datatype")
         query = parser.parse()
         regular_results = evaluator.evaluate(query)
         
         # Now get DISTINCT results
-        parser = BQLParser.from_string("SELECT DISTINCT datatype")
+        parser = BIQLParser.from_string("SELECT DISTINCT datatype")
         query = parser.parse()
         distinct_results = evaluator.evaluate(query)
         
@@ -542,7 +542,7 @@ class TestBQLEvaluator:
             
     def test_distinct_multiple_fields(self, evaluator):
         """Test DISTINCT with multiple fields"""
-        parser = BQLParser.from_string("SELECT DISTINCT sub, datatype")
+        parser = BIQLParser.from_string("SELECT DISTINCT sub, datatype")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -555,7 +555,7 @@ class TestBQLEvaluator:
             
     def test_distinct_with_where_clause(self, evaluator):
         """Test DISTINCT combined with WHERE clause"""
-        parser = BQLParser.from_string("SELECT DISTINCT task WHERE datatype=func")
+        parser = BIQLParser.from_string("SELECT DISTINCT task WHERE datatype=func")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -569,7 +569,7 @@ class TestBQLEvaluator:
                 
     def test_having_clause_functionality(self, evaluator):
         """Test HAVING clause with aggregate functions"""
-        parser = BQLParser.from_string("SELECT sub, COUNT(*) GROUP BY sub HAVING COUNT(*) > 2")
+        parser = BIQLParser.from_string("SELECT sub, COUNT(*) GROUP BY sub HAVING COUNT(*) > 2")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -581,7 +581,7 @@ class TestBQLEvaluator:
     def test_having_clause_different_operators(self, evaluator):
         """Test HAVING clause with different comparison operators"""
         # Test >= operator
-        parser = BQLParser.from_string("SELECT datatype, COUNT(*) GROUP BY datatype HAVING COUNT(*) >= 1")
+        parser = BIQLParser.from_string("SELECT datatype, COUNT(*) GROUP BY datatype HAVING COUNT(*) >= 1")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -590,7 +590,7 @@ class TestBQLEvaluator:
             assert count >= 1
             
         # Test < operator (should return empty for reasonable datasets)
-        parser = BQLParser.from_string("SELECT sub, COUNT(*) GROUP BY sub HAVING COUNT(*) < 1")
+        parser = BIQLParser.from_string("SELECT sub, COUNT(*) GROUP BY sub HAVING COUNT(*) < 1")
         query = parser.parse()
         results = evaluator.evaluate(query)
         # Should be empty since no subject can have < 1 files
@@ -599,7 +599,7 @@ class TestBQLEvaluator:
     def test_error_handling_invalid_field_comparison(self, evaluator):
         """Test error handling for invalid field comparisons"""
         # This should not crash, just return no results for non-existent fields
-        parser = BQLParser.from_string("nonexistent_field=value")
+        parser = BIQLParser.from_string("nonexistent_field=value")
         query = parser.parse()
         results = evaluator.evaluate(query)
         assert len(results) == 0
@@ -607,7 +607,7 @@ class TestBQLEvaluator:
     def test_error_handling_type_conversion(self, evaluator):
         """Test error handling for type conversion in comparisons"""
         # Test numeric comparison with non-numeric string (should fall back to string comparison)
-        parser = BQLParser.from_string("sub>999")  # sub is usually a string like "01"
+        parser = BIQLParser.from_string("sub>999")  # sub is usually a string like "01"
         query = parser.parse()
         results = evaluator.evaluate(query)
         # Should not crash, may return results based on string comparison
@@ -615,7 +615,7 @@ class TestBQLEvaluator:
         
     def test_not_operator(self, evaluator):
         """Test NOT operator functionality"""
-        parser = BQLParser.from_string("NOT datatype=func")
+        parser = BIQLParser.from_string("NOT datatype=func")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -626,7 +626,7 @@ class TestBQLEvaluator:
             
     def test_in_operator_with_lists(self, evaluator):
         """Test IN operator with list values"""
-        parser = BQLParser.from_string("sub IN [01, 02, 03]")
+        parser = BIQLParser.from_string("sub IN [01, 02, 03]")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -637,7 +637,7 @@ class TestBQLEvaluator:
                 
     def test_like_operator(self, evaluator):
         """Test LIKE operator for SQL-style pattern matching"""
-        parser = BQLParser.from_string("task LIKE %back%")
+        parser = BIQLParser.from_string("task LIKE %back%")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -648,7 +648,7 @@ class TestBQLEvaluator:
                 
     def test_regex_match_operator(self, evaluator):
         """Test regex MATCH operator (~=)"""
-        parser = BQLParser.from_string("sub~=\"0[1-3]\"")
+        parser = BIQLParser.from_string("sub~=\"0[1-3]\"")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -660,7 +660,7 @@ class TestBQLEvaluator:
     def test_range_queries_edge_cases(self, evaluator):
         """Test range queries with edge cases"""
         # Test range with string values that can be converted to numbers
-        parser = BQLParser.from_string("run=[1:3]")
+        parser = BIQLParser.from_string("run=[1:3]")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -677,7 +677,7 @@ class TestBQLEvaluator:
     def test_metadata_field_access_edge_cases(self, evaluator):
         """Test metadata field access with missing values"""
         # Test accessing nested metadata that doesn't exist
-        parser = BQLParser.from_string("metadata.NonExistentField=value")
+        parser = BIQLParser.from_string("metadata.NonExistentField=value")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -687,7 +687,7 @@ class TestBQLEvaluator:
     def test_participants_field_access_edge_cases(self, evaluator):
         """Test participants data access with missing values"""
         # Test accessing participant data for non-existent field
-        parser = BQLParser.from_string("participants.nonexistent=value")
+        parser = BIQLParser.from_string("participants.nonexistent=value")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -705,8 +705,8 @@ class TestQSMWorkflow:
         import json
         from pathlib import Path
         from biql.dataset import BIDSDataset
-        from biql.evaluator import BQLEvaluator
-        from biql.parser import BQLParser
+        from biql.evaluator import BIQLEvaluator
+        from biql.parser import BIQLParser
         
         with tempfile.TemporaryDirectory() as tmpdir:
             tmpdir = Path(tmpdir)
@@ -733,9 +733,9 @@ class TestQSMWorkflow:
             
             # Test the QSM reconstruction grouping query
             dataset = BIDSDataset(tmpdir)
-            evaluator = BQLEvaluator(dataset)
+            evaluator = BIQLEvaluator(dataset)
             
-            parser = BQLParser.from_string(
+            parser = BIQLParser.from_string(
                 "SELECT filename, sub, acq, part, echo, COUNT(*) "
                 "WHERE (part=mag OR part=phase) AND suffix=MEGRE "
                 "GROUP BY sub, acq"
@@ -785,8 +785,8 @@ class TestQSMWorkflow:
         import json
         from pathlib import Path
         from biql.dataset import BIDSDataset
-        from biql.evaluator import BQLEvaluator
-        from biql.parser import BQLParser
+        from biql.evaluator import BIQLEvaluator
+        from biql.parser import BIQLParser
         
         with tempfile.TemporaryDirectory() as tmpdir:
             tmpdir = Path(tmpdir)
@@ -820,9 +820,9 @@ class TestQSMWorkflow:
             
             # Test DISTINCT metadata.EchoTime
             dataset = BIDSDataset(tmpdir)
-            evaluator = BQLEvaluator(dataset)
+            evaluator = BIQLEvaluator(dataset)
             
-            parser = BQLParser.from_string("SELECT DISTINCT metadata.EchoTime WHERE suffix=MEGRE")
+            parser = BIQLParser.from_string("SELECT DISTINCT metadata.EchoTime WHERE suffix=MEGRE")
             query = parser.parse()
             results = evaluator.evaluate(query)
             
@@ -834,7 +834,7 @@ class TestQSMWorkflow:
             assert 0.015 in echo_times
             
             # Test DISTINCT echo (should be 01, 02)
-            parser = BQLParser.from_string("SELECT DISTINCT echo WHERE suffix=MEGRE")
+            parser = BIQLParser.from_string("SELECT DISTINCT echo WHERE suffix=MEGRE")
             query = parser.parse()
             results = evaluator.evaluate(query)
             
@@ -844,8 +844,8 @@ class TestQSMWorkflow:
             assert "02" in echo_numbers
 
 
-class TestBQLFormatter:
-    """Test BQL output formatting"""
+class TestBIQLFormatter:
+    """Test BIQL output formatting"""
     
     def test_json_formatting(self):
         """Test JSON output formatting"""
@@ -854,7 +854,7 @@ class TestBQLFormatter:
             {"sub": "02", "task": "rest", "filepath": "/path/to/file2.nii"}
         ]
         
-        formatted = BQLFormatter.format(results, "json")
+        formatted = BIQLFormatter.format(results, "json")
         parsed = json.loads(formatted)
         
         assert len(parsed) == 2
@@ -867,7 +867,7 @@ class TestBQLFormatter:
             {"sub": "02", "task": "rest"}
         ]
         
-        formatted = BQLFormatter.format(results, "table")
+        formatted = BIQLFormatter.format(results, "table")
         lines = formatted.split('\n')
         
         assert len(lines) >= 4  # Header + separator + 2 data rows
@@ -882,7 +882,7 @@ class TestBQLFormatter:
             {"sub": "02", "task": "rest"}
         ]
         
-        formatted = BQLFormatter.format(results, "csv")
+        formatted = BIQLFormatter.format(results, "csv")
         lines = formatted.strip().split('\n')
         
         assert len(lines) >= 3  # Header + 2 data rows
@@ -896,7 +896,7 @@ class TestBQLFormatter:
             {"filepath": "/path/to/file2.nii"}
         ]
         
-        formatted = BQLFormatter.format(results, "paths")
+        formatted = BIQLFormatter.format(results, "paths")
         lines = formatted.strip().split('\n')
         
         assert len(lines) == 2
@@ -907,10 +907,10 @@ class TestBQLFormatter:
         """Test formatting empty results"""
         results = []
         
-        json_formatted = BQLFormatter.format(results, "json")
+        json_formatted = BIQLFormatter.format(results, "json")
         assert json_formatted == "[]"
         
-        table_formatted = BQLFormatter.format(results, "table")
+        table_formatted = BIQLFormatter.format(results, "table")
         assert "No results found" in table_formatted
         
     def test_tsv_formatting(self):
@@ -920,7 +920,7 @@ class TestBQLFormatter:
             {"sub": "02", "task": "rest", "datatype": "func"}
         ]
         
-        formatted = BQLFormatter.format(results, "tsv")
+        formatted = BIQLFormatter.format(results, "tsv")
         lines = formatted.strip().split('\n')
         
         assert len(lines) >= 3  # Header + 2 data rows
@@ -934,7 +934,7 @@ class TestBQLFormatter:
         """Test unknown format falls back to JSON"""
         results = [{"sub": "01", "task": "nback"}]
         
-        formatted = BQLFormatter.format(results, "unknown_format")
+        formatted = BIQLFormatter.format(results, "unknown_format")
         # Should fall back to JSON format
         parsed = json.loads(formatted)
         assert len(parsed) == 1
@@ -951,18 +951,18 @@ class TestBQLFormatter:
         ]
         
         # Test JSON formatting with complex values
-        json_formatted = BQLFormatter.format(results, "json")
+        json_formatted = BIQLFormatter.format(results, "json")
         parsed = json.loads(json_formatted)
         assert isinstance(parsed[0]["files"], list)
         assert len(parsed[0]["files"]) == 2
         
         # Test table formatting with complex values  
-        table_formatted = BQLFormatter.format(results, "table")
+        table_formatted = BIQLFormatter.format(results, "table")
         # Complex values might be displayed as [...] or {... keys...} in table format
         assert "sub" in table_formatted and "01" in table_formatted
         
         # Test CSV formatting with complex values
-        csv_formatted = BQLFormatter.format(results, "csv") 
+        csv_formatted = BIQLFormatter.format(results, "csv") 
         assert "file1.nii" in csv_formatted
         
     def test_paths_formatting_edge_cases(self):
@@ -973,7 +973,7 @@ class TestBQLFormatter:
             {"filepath": "/absolute/path/file.nii", "relative_path": "sub-02/func/file.nii"}
         ]
         
-        formatted = BQLFormatter.format(results, "paths")
+        formatted = BIQLFormatter.format(results, "paths")
         lines = formatted.strip().split('\n')
         
         assert len(lines) == 2
@@ -989,7 +989,7 @@ class TestBQLFormatter:
             {"sub": "04", "value": ["a", "b"]}
         ]
         
-        formatted = BQLFormatter.format(results, "csv")
+        formatted = BIQLFormatter.format(results, "csv")
         lines = formatted.strip().split('\n')
         
         # Check header
@@ -1009,12 +1009,12 @@ class TestBQLFormatter:
         
         # Should not crash on any format
         for format_type in ["json", "table", "csv", "tsv"]:
-            formatted = BQLFormatter.format(results, format_type)
+            formatted = BIQLFormatter.format(results, format_type)
             assert isinstance(formatted, str)
             # Some formats might return empty string for empty data, that's OK
             
         # Paths format might return empty for results without filepath/relative_path
-        paths_formatted = BQLFormatter.format(results, "paths")
+        paths_formatted = BIQLFormatter.format(results, "paths")
         assert isinstance(paths_formatted, str)
 
 
@@ -1032,10 +1032,10 @@ class TestIntegration:
     def test_end_to_end_query(self, synthetic_dataset_path):
         """Test complete end-to-end query execution"""
         dataset = BIDSDataset(synthetic_dataset_path)
-        evaluator = BQLEvaluator(dataset)
+        evaluator = BIQLEvaluator(dataset)
         
         # Test complex query
-        parser = BQLParser.from_string(
+        parser = BIQLParser.from_string(
             "SELECT sub, ses, task, run, filepath WHERE datatype=func AND task=nback ORDER BY sub, run"
         )
         query = parser.parse()
@@ -1054,8 +1054,8 @@ class TestIntegration:
         assert all(result["task"] == "nback" for result in results)
             
         # Test formatting
-        json_output = BQLFormatter.format(results, "json")
-        table_output = BQLFormatter.format(results, "table")
+        json_output = BIQLFormatter.format(results, "json")
+        table_output = BIQLFormatter.format(results, "table")
         
         assert len(json_output) > 0
         assert len(table_output) > 0
@@ -1063,10 +1063,10 @@ class TestIntegration:
     def test_metadata_inheritance_query(self, synthetic_dataset_path):
         """Test queries involving metadata inheritance"""
         dataset = BIDSDataset(synthetic_dataset_path)
-        evaluator = BQLEvaluator(dataset)
+        evaluator = BIQLEvaluator(dataset)
         
         # Look for files with RepetitionTime metadata
-        parser = BQLParser.from_string("metadata.RepetitionTime>0")
+        parser = BIQLParser.from_string("metadata.RepetitionTime>0")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -1079,10 +1079,10 @@ class TestIntegration:
     def test_participants_integration(self, synthetic_dataset_path):
         """Test integration with participants data"""
         dataset = BIDSDataset(synthetic_dataset_path)
-        evaluator = BQLEvaluator(dataset)
+        evaluator = BIQLEvaluator(dataset)
         
         # Query based on participant demographics
-        parser = BQLParser.from_string("SELECT sub, participants.age, participants.sex WHERE participants.age>25")
+        parser = BIQLParser.from_string("SELECT sub, participants.age, participants.sex WHERE participants.age>25")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -1093,10 +1093,10 @@ class TestIntegration:
     def test_pattern_matching_queries(self, synthetic_dataset_path):
         """Test pattern matching functionality"""
         dataset = BIDSDataset(synthetic_dataset_path)
-        evaluator = BQLEvaluator(dataset)
+        evaluator = BIQLEvaluator(dataset)
         
         # Test wildcard matching
-        parser = BQLParser.from_string("suffix=*bold*")
+        parser = BIQLParser.from_string("suffix=*bold*")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -1105,7 +1105,7 @@ class TestIntegration:
                 assert "bold" in result["suffix"]
                 
         # Test regex matching (using string format since /regex/ literals aren't implemented)
-        parser = BQLParser.from_string('sub~="0[1-3]"')
+        parser = BIQLParser.from_string('sub~="0[1-3]"')
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -1124,7 +1124,7 @@ class TestErrorHandling:
             
     def test_empty_query(self):
         """Test handling of empty queries"""
-        parser = BQLParser.from_string("")
+        parser = BIQLParser.from_string("")
         query = parser.parse()
         
         # Should parse successfully but return minimal query
@@ -1140,10 +1140,10 @@ class TestErrorHandling:
             (dataset_path / "dataset_description.json").write_text('{"Name": "Test", "BIDSVersion": "1.0.0"}')
             
             dataset = BIDSDataset(dataset_path)
-            evaluator = BQLEvaluator(dataset)
+            evaluator = BIQLEvaluator(dataset)
             
             # Query non-existent field
-            parser = BQLParser.from_string("nonexistent_field=value")
+            parser = BIQLParser.from_string("nonexistent_field=value")
             query = parser.parse()
             results = evaluator.evaluate(query)
             

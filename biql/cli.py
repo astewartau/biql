@@ -1,7 +1,7 @@
 """
-Command Line Interface for BIDS Query Language (BQL)
+Command Line Interface for BIDS Query Language (BIQL)
 
-Provides a CLI for executing BQL queries against BIDS datasets.
+Provides a CLI for executing BIQL queries against BIDS datasets.
 """
 
 import argparse
@@ -10,16 +10,16 @@ from pathlib import Path
 from typing import Optional
 
 from .dataset import BIDSDataset
-from .evaluator import BQLEvaluator
-from .formatter import BQLFormatter
-from .parser import BQLParser, BQLParseError
+from .evaluator import BIQLEvaluator
+from .formatter import BIQLFormatter
+from .parser import BIQLParser, BIQLParseError
 
 
 def create_parser() -> argparse.ArgumentParser:
     """Create command line argument parser"""
     parser = argparse.ArgumentParser(
         prog='biql',
-        description='BIDS Query Language (BQL) - Query BIDS datasets with SQL-like syntax',
+        description='BIDS Query Language (BIQL) - Query BIDS datasets with SQL-like syntax',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -51,7 +51,7 @@ Examples:
     
     parser.add_argument(
         'query', 
-        help='BQL query string (use quotes to avoid shell interpretation)'
+        help='BIQL query string (use quotes to avoid shell interpretation)'
     )
     
     parser.add_argument(
@@ -133,7 +133,7 @@ def show_dataset_entities(dataset: BIDSDataset) -> None:
 def validate_query(query_str: str) -> bool:
     """Validate query syntax without executing"""
     try:
-        parser = BQLParser.from_string(query_str)
+        parser = BIQLParser.from_string(query_str)
         query = parser.parse()
         print("Query syntax is valid.")
         if query.select_clause:
@@ -147,7 +147,7 @@ def validate_query(query_str: str) -> bool:
         if query.format:
             print(f"FORMAT: {query.format}")
         return True
-    except BQLParseError as e:
+    except BIQLParseError as e:
         print(f"Query syntax error: {e}", file=sys.stderr)
         return False
 
@@ -192,9 +192,9 @@ def main() -> int:
             
         # Parse query
         try:
-            parser = BQLParser.from_string(args.query)
+            parser = BIQLParser.from_string(args.query)
             query = parser.parse()
-        except BQLParseError as e:
+        except BIQLParseError as e:
             print(f"Query syntax error: {e}", file=sys.stderr)
             return 1
             
@@ -203,7 +203,7 @@ def main() -> int:
             
         # Evaluate query
         try:
-            evaluator = BQLEvaluator(dataset)
+            evaluator = BIQLEvaluator(dataset)
             results = evaluator.evaluate(query)
         except Exception as e:
             print(f"Query evaluation error: {e}", file=sys.stderr)
@@ -220,7 +220,7 @@ def main() -> int:
         
         # Format and output results
         try:
-            formatted = BQLFormatter.format(results, format_type)
+            formatted = BIQLFormatter.format(results, format_type)
             
             if args.output:
                 # Write to file

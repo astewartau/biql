@@ -1,5 +1,5 @@
 """
-Abstract Syntax Tree (AST) node definitions for BQL
+Abstract Syntax Tree (AST) node definitions for BIQL
 """
 
 from dataclasses import dataclass
@@ -82,7 +82,7 @@ class FunctionCall(Expression):
 
 @dataclass
 class Query(ASTNode):
-    """Complete BQL query with all clauses"""
+    """Complete BIQL query with all clauses"""
     select_clause: Optional[SelectClause]
     where_clause: Optional[WhereClause]
     group_by: Optional[List[str]]

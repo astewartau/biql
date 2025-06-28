@@ -1,5 +1,5 @@
 """
-Performance tests for BIDS Query Language (BQL)
+Performance tests for BIDS Query Language (BIQL)
 
 Tests performance characteristics and scalability.
 """
@@ -10,15 +10,15 @@ from pathlib import Path
 import pytest
 
 from biql.dataset import BIDSDataset
-from biql.evaluator import BQLEvaluator
-from biql.parser import BQLParser
+from biql.evaluator import BIQLEvaluator
+from biql.parser import BIQLParser
 
 # Test constants
 BIDS_EXAMPLES_DIR = Path("/home/ashley/repos/bids-examples/")
 
 
 class TestPerformance:
-    """Test BQL performance characteristics"""
+    """Test BIQL performance characteristics"""
     
     @pytest.fixture
     def large_dataset(self):
@@ -52,11 +52,11 @@ class TestPerformance:
         
     def test_simple_query_performance(self, large_dataset):
         """Test simple query performance"""
-        evaluator = BQLEvaluator(large_dataset)
+        evaluator = BIQLEvaluator(large_dataset)
         
         start_time = time.time()
         
-        parser = BQLParser.from_string("datatype=func")
+        parser = BIQLParser.from_string("datatype=func")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -67,11 +67,11 @@ class TestPerformance:
         
     def test_complex_query_performance(self, large_dataset):
         """Test complex query performance"""
-        evaluator = BQLEvaluator(large_dataset)
+        evaluator = BIQLEvaluator(large_dataset)
         
         start_time = time.time()
         
-        parser = BQLParser.from_string(
+        parser = BIQLParser.from_string(
             "SELECT sub, ses, task, run, filepath WHERE "
             "(datatype=func OR datatype=anat) AND "
             "(task=rest OR task~=\".*back.*\") "
@@ -87,11 +87,11 @@ class TestPerformance:
         
     def test_metadata_query_performance(self, large_dataset):
         """Test metadata query performance"""
-        evaluator = BQLEvaluator(large_dataset)
+        evaluator = BIQLEvaluator(large_dataset)
         
         start_time = time.time()
         
-        parser = BQLParser.from_string("metadata.RepetitionTime>0")
+        parser = BIQLParser.from_string("metadata.RepetitionTime>0")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -102,11 +102,11 @@ class TestPerformance:
         
     def test_aggregation_performance(self, large_dataset):
         """Test aggregation query performance"""
-        evaluator = BQLEvaluator(large_dataset)
+        evaluator = BIQLEvaluator(large_dataset)
         
         start_time = time.time()
         
-        parser = BQLParser.from_string("SELECT sub, COUNT(*) GROUP BY sub")
+        parser = BIQLParser.from_string("SELECT sub, COUNT(*) GROUP BY sub")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -117,11 +117,11 @@ class TestPerformance:
         
     def test_pattern_matching_performance(self, large_dataset):
         """Test pattern matching performance"""
-        evaluator = BQLEvaluator(large_dataset)
+        evaluator = BIQLEvaluator(large_dataset)
         
         start_time = time.time()
         
-        parser = BQLParser.from_string("suffix~=\".*bold.*\" AND sub~=\"0[1-5]\"")
+        parser = BIQLParser.from_string("suffix~=\".*bold.*\" AND sub~=\"0[1-5]\"")
         query = parser.parse()
         results = evaluator.evaluate(query)
         
@@ -138,7 +138,7 @@ class TestPerformance:
         process = psutil.Process(os.getpid())
         initial_memory = process.memory_info().rss / 1024 / 1024  # MB
         
-        evaluator = BQLEvaluator(large_dataset)
+        evaluator = BIQLEvaluator(large_dataset)
         
         # Run several queries to see memory growth
         queries = [
@@ -150,7 +150,7 @@ class TestPerformance:
         ]
         
         for query_str in queries:
-            parser = BQLParser.from_string(query_str)
+            parser = BIQLParser.from_string(query_str)
             query = parser.parse()
             results = evaluator.evaluate(query)
             
@@ -182,11 +182,11 @@ class TestPerformance:
         query_times = []
         
         for file_count, dataset in datasets_by_size:
-            evaluator = BQLEvaluator(dataset)
+            evaluator = BIQLEvaluator(dataset)
             
             start_time = time.time()
             
-            parser = BQLParser.from_string("datatype=func OR datatype=anat")
+            parser = BIQLParser.from_string("datatype=func OR datatype=anat")
             query = parser.parse()
             results = evaluator.evaluate(query)
             
@@ -223,12 +223,12 @@ class TestConcurrency:
         import threading
         import queue
         
-        evaluator = BQLEvaluator(synthetic_dataset)
+        evaluator = BIQLEvaluator(synthetic_dataset)
         results_queue = queue.Queue()
         
         def run_query(query_str, result_queue):
             try:
-                parser = BQLParser.from_string(query_str)
+                parser = BIQLParser.from_string(query_str)
                 query = parser.parse()
                 results = evaluator.evaluate(query)
                 result_queue.put(("success", len(results)))

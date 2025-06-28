@@ -1,5 +1,5 @@
 """
-Output formatters for BIDS Query Language (BQL)
+Output formatters for BIDS Query Language (BIQL)
 
 Formats query results in different output formats.
 """
@@ -10,7 +10,7 @@ import json
 from typing import Any, Dict, List
 
 
-class BQLFormatter:
+class BIQLFormatter:
     """Formats query results in different output formats"""
     
     @staticmethod
@@ -19,18 +19,18 @@ class BQLFormatter:
         format_type = format_type.lower() if format_type else 'json'
         
         if format_type == 'json':
-            return BQLFormatter._format_json(results)
+            return BIQLFormatter._format_json(results)
         elif format_type == 'table':
-            return BQLFormatter._format_table(results)
+            return BIQLFormatter._format_table(results)
         elif format_type == 'csv':
-            return BQLFormatter._format_csv(results)
+            return BIQLFormatter._format_csv(results)
         elif format_type == 'paths':
-            return BQLFormatter._format_paths(results)
+            return BIQLFormatter._format_paths(results)
         elif format_type == 'tsv':
-            return BQLFormatter._format_tsv(results)
+            return BIQLFormatter._format_tsv(results)
         else:
             # Default to JSON for unknown formats
-            return BQLFormatter._format_json(results)
+            return BIQLFormatter._format_json(results)
     
     @staticmethod
     def _format_json(results: List[Dict]) -> str:
@@ -67,7 +67,7 @@ class BQLFormatter:
             
         for result in results:
             for key in all_keys:
-                value = BQLFormatter._format_value_for_display(result.get(key))
+                value = BIQLFormatter._format_value_for_display(result.get(key))
                 widths[key] = max(widths[key], len(value))
                 
         # Build table
@@ -89,7 +89,7 @@ class BQLFormatter:
         for result in results:
             row = '|'
             for key in all_keys:
-                value = BQLFormatter._format_value_for_display(result.get(key))
+                value = BIQLFormatter._format_value_for_display(result.get(key))
                 row += f" {value:<{widths[key]}} |"
             lines.append(row)
             
@@ -120,7 +120,7 @@ class BQLFormatter:
                 csv_row = {}
                 for key in fieldnames:
                     value = result.get(key)
-                    csv_row[key] = BQLFormatter._format_value_for_csv(value)
+                    csv_row[key] = BIQLFormatter._format_value_for_csv(value)
                 writer.writerow(csv_row)
                 
         return output.getvalue()
@@ -152,7 +152,7 @@ class BQLFormatter:
             row_values = []
             for key in fieldnames:
                 value = result.get(key)
-                formatted_value = BQLFormatter._format_value_for_csv(value)
+                formatted_value = BIQLFormatter._format_value_for_csv(value)
                 row_values.append(formatted_value)
             lines.append('\t'.join(row_values))
             

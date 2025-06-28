@@ -42,7 +42,7 @@ setup(
     entry_points={
         "console_scripts": [
             "biql=biql.cli:main",
-            "bql=biql.cli:main",
+            "biql=biql.cli:main",
         ],
     },
 )

@@ -8,8 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2024-06-28
 
 ### Added
-- Initial release of BIDS Query Language (BQL)
-- Complete lexer and parser for BQL syntax
+- Initial release of BIDS Query Language (BIQL)
+- Complete lexer and parser for BIQL syntax
 - BIDS dataset indexing and file parsing
 - Query evaluator with support for:
   - Entity-based queries (subject, session, task, run, etc.)
@@ -88,11 +88,11 @@ biql --show-entities
 
 ### Python API
 ```python
-from biql import BIDSDataset, BQLEvaluator, BQLParser
+from biql import BIDSDataset, BIQLEvaluator, BIQLParser
 
 dataset = BIDSDataset("/path/to/bids/dataset")
-evaluator = BQLEvaluator(dataset)
-parser = BQLParser.from_string("sub=01 AND datatype=func")
+evaluator = BIQLEvaluator(dataset)
+parser = BIQLParser.from_string("sub=01 AND datatype=func")
 query = parser.parse()
 results = evaluator.evaluate(query)
 ```

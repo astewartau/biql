@@ -1,18 +1,20 @@
 # Jekyll configuration for BIQL documentation
 
-title: "BIDS Query Language (BQL)"
+title: "BIDS Query Language (BIQL)"
 description: "A powerful SQL-like query language for BIDS neuroimaging datasets"
-url: "https://username.github.io"
+
+# IMPORTANT: Update these URLs to match your actual GitHub repository
+url: "https://yourusername.github.io"
 baseurl: "/biql"
 
 # Theme configuration
 remote_theme: just-the-docs/just-the-docs
 color_scheme: nil
 
-# Repository information
-repository: "username/biql"
+# Repository information - UPDATE THESE
+repository: "yourusername/biql"
 edit_page: true
-edit_repository: "https://github.com/username/biql"
+edit_repository: "https://github.com/yourusername/biql"
 edit_branch: "main"
 
 # Search configuration
@@ -29,7 +31,7 @@ search:
 nav_sort: case_sensitive
 nav_external_links:
   - title: "GitHub Repository"
-    url: "https://github.com/username/biql"
+    url: "https://github.com/yourusername/biql"
     hide_icon: false
 
 # Features
@@ -37,7 +39,6 @@ back_to_top: true
 back_to_top_text: "Back to top"
 
 heading_anchors: true
-copy_code_button: false
 
 # Callouts
 callouts_level: quiet
@@ -60,9 +61,6 @@ last_edit_time_format: "%b %e %Y at %I:%M %p"
 
 gh_edit_link: true
 gh_edit_link_text: "Edit this page on GitHub"
-gh_edit_repository: "https://github.com/username/biql"
-gh_edit_branch: "main"
-gh_edit_view_mode: "tree"
 
 # Build settings
 markdown: kramdown
@@ -77,8 +75,6 @@ kramdown:
 # Plugins
 plugins:
   - jekyll-seo-tag
-  - jekyll-sitemap
-  - jekyll-feed
 
 # Exclude from processing
 exclude:
@@ -89,22 +85,3 @@ exclude:
   - .sass-cache/
   - .jekyll-cache/
   - gemfiles/
-
-# SEO settings
-lang: en_US
-author:
-  name: "BIQL Contributors"
-  email: "contributors@biql.org"
-
-# Social media
-social:
-  name: "BIDS Query Language"
-  links:
-    - https://github.com/username/biql
-
-# Custom variables
-biql:
-  version: "1.0.0"
-  release_date: "2024"
-  license: "MIT"
-  repository: "https://github.com/username/biql"
