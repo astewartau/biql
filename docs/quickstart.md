@@ -211,23 +211,6 @@ biql "SELECT sub, echo, part, filename \
       ORDER BY echo, part" --format table
 ```
 
-## Next Steps
-
-Now that you've got the basics down, explore more advanced features:
-
-- 📖 **[Language Reference](language.html)** - Complete BIQL syntax guide
-- ⚙️ **[CLI Reference](cli.html)** - All command-line options
-- 🔬 **[Examples](examples.html)** - Real-world query cookbook
-- 🧠 **[QSM Guide](qsm_migration_guide.html)** - Specialized QSM workflows
-
-## Tips for Success
-
-1. **Start Simple** - Begin with basic SELECT queries and add complexity gradually
-2. **Use DISTINCT** - Great for exploring what entities/values are available
-3. **Test Incrementally** - Build complex queries piece by piece
-4. **Check Your Logic** - Use COUNT(*) to verify your filters are working correctly
-5. **Save Useful Queries** - Keep a collection of your most-used patterns
-
 ## Getting Help
 
 - **Built-in Help**: `biql --help`
