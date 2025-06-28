@@ -31,7 +31,7 @@ Instead of API tokens, you can use PyPI's trusted publisher feature:
 
 1. Go to [PyPI Trusted Publishers](https://pypi.org/manage/account/publishing/)
 2. Add a new trusted publisher with:
-   - **Repository**: `yourusername/biql`
+   - **Repository**: `astewartau/biql`
    - **Workflow**: `publish.yml`
    - **Environment**: `pypi`
 
@@ -43,20 +43,20 @@ Update these files with your actual repository information:
 
 #### `setup.py`:
 ```python
-url="https://github.com/yourusername/biql",
+url="https://github.com/astewartau/biql",
 ```
 
 #### `pyproject.toml`:
 ```toml
 [project.urls]
-Homepage = "https://github.com/yourusername/biql"
-Repository = "https://github.com/yourusername/biql"
+Homepage = "https://github.com/astewartau/biql"
+Repository = "https://github.com/astewartau/biql"
 ```
 
 #### `docs/_config.yml`:
 ```yaml
-url: "https://yourusername.github.io"
-repository: "yourusername/biql"
+url: "https://astewartau.github.io"
+repository: "astewartau/biql"
 ```
 
 ## Release Process
@@ -73,7 +73,7 @@ repository: "yourusername/biql"
    ```
 
 2. **Create GitHub Release**:
-   - Go to: https://github.com/yourusername/biql/releases/new
+   - Go to: https://github.com/astewartau/biql/releases/new
    - Select the tag you just created
    - Add release notes
    - Click "Publish release"

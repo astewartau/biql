@@ -4,7 +4,7 @@ title: "BIDS Query Language (BIQL)"
 description: "A powerful SQL-like query language for BIDS neuroimaging datasets"
 
 # IMPORTANT: Update these URLs to match your actual GitHub repository
-url: "https://yourusername.github.io"
+url: "https://astewartau.github.io"
 baseurl: "/biql"
 
 # Theme configuration
@@ -12,9 +12,9 @@ remote_theme: just-the-docs/just-the-docs
 color_scheme: nil
 
 # Repository information - UPDATE THESE
-repository: "yourusername/biql"
+repository: "astewartau/biql"
 edit_page: true
-edit_repository: "https://github.com/yourusername/biql"
+edit_repository: "https://github.com/astewartau/biql"
 edit_branch: "main"
 
 # Search configuration
@@ -31,7 +31,7 @@ search:
 nav_sort: case_sensitive
 nav_external_links:
   - title: "GitHub Repository"
-    url: "https://github.com/yourusername/biql"
+    url: "https://github.com/astewartau/biql"
     hide_icon: false
 
 # Features

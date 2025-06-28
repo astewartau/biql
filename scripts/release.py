@@ -107,7 +107,7 @@ def main():
     print("\n🎉 Release prepared!")
     print("Next steps:")
     print("1. Push to GitHub: git push && git push --tags")
-    print("2. Create a GitHub release at: https://github.com/yourusername/biql/releases/new")
+    print("2. Create a GitHub release at: https://github.com/astewartau/biql/releases/new")
     print("3. The GitHub Action will automatically publish to PyPI")
 
 if __name__ == "__main__":

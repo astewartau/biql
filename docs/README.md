@@ -12,9 +12,9 @@ This directory contains the Jekyll-based documentation for BIDS Query Language (
 
 2. **Update URLs** in `_config.yml`:
    ```yaml
-   url: "https://yourusername.github.io"
+   url: "https://astewartau.github.io"
    baseurl: "/your-repo-name"
-   repository: "yourusername/your-repo-name"
+   repository: "astewartau/your-repo-name"
    ```
 
 3. **GitHub Actions** (recommended):
