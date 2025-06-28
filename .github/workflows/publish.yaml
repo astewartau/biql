@@ -3,13 +3,6 @@ name: Publish to PyPI
 on:
   release:
     types: [published]
-  workflow_dispatch:
-    inputs:
-      test_pypi:
-        description: 'Publish to Test PyPI instead of PyPI'
-        required: false
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -76,31 +69,6 @@ jobs:
         biql --help
         biql --version
         python -c "import biql; print('Import successful')"
-
-  publish-to-testpypi:
-    name: Publish to TestPyPI
-    needs: [build, test-install]
-    runs-on: ubuntu-latest
-    if: github.event.inputs.test_pypi == 'true'
-    
-    environment:
-      name: testpypi
-      url: https://test.pypi.org/p/biql
-      
-    permissions:
-      id-token: write
-      
-    steps:
-    - name: Download artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: python-package-distributions
-        path: dist/
-        
-    - name: Publish to TestPyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        repository-url: https://test.pypi.org/legacy/
 
   publish-to-pypi:
     name: Publish to PyPI
