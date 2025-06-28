@@ -324,9 +324,30 @@ class BQLEvaluator:
                         selected[key] = 1
                 else:
                     # Handle regular field selection
-                    value = self._get_nested_value(result, item)
                     key = alias if alias else item
-                    selected[key] = value
+                    
+                    # If this is a grouped result, aggregate non-grouped fields into arrays
+                    if '_group' in result:
+                        # Collect all unique values for this field from the group
+                        values = []
+                        seen = set()
+                        for group_item in result['_group']:
+                            value = self._get_nested_value(group_item, item)
+                            if value is not None and value not in seen:
+                                values.append(value)
+                                seen.add(value)
+                        
+                        # For single values, don't use array; for multiple values, use array
+                        if len(values) == 1:
+                            selected[key] = values[0]
+                        elif len(values) > 1:
+                            selected[key] = values
+                        else:
+                            selected[key] = None
+                    else:
+                        # Regular non-grouped result
+                        value = self._get_nested_value(result, item)
+                        selected[key] = value
                     
             selected_results.append(selected)
             

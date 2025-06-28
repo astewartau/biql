@@ -332,6 +332,166 @@ class TestBQLEvaluator:
             # Check that results are ordered by subject
             subjects = [r.get("sub", "") for r in results]
             assert subjects == sorted(subjects)
+            
+    def test_group_by_auto_aggregation(self, evaluator):
+        """Test auto-aggregation of non-grouped fields in GROUP BY queries"""
+        parser = BQLParser.from_string("SELECT sub, task, filepath, COUNT(*) WHERE datatype=func GROUP BY sub")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+        
+        if len(results) > 0:
+            result = results[0]
+            
+            # Grouped field should be a single value
+            assert "sub" in result
+            assert isinstance(result["sub"], str)
+            
+            # Non-grouped fields should be aggregated into arrays when multiple values exist
+            if "task" in result:
+                # Task should be either a single value or array of values
+                assert isinstance(result["task"], (str, list))
+                
+            if "filepath" in result:
+                # Filepath should be either a single value or array of values
+                assert isinstance(result["filepath"], (str, list))
+            
+            # COUNT should work as expected
+            assert "count" in result
+            assert isinstance(result["count"], int)
+            assert result["count"] > 0
+            
+    def test_group_by_single_value_no_array(self, evaluator):
+        """Test that single values don't become arrays in GROUP BY results"""
+        parser = BQLParser.from_string("SELECT sub, datatype, COUNT(*) WHERE datatype=func GROUP BY sub, datatype")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+        
+        if len(results) > 0:
+            result = results[0]
+            
+            # Since datatype is in GROUP BY and we filtered for only 'func', 
+            # it should be a single value, not an array
+            assert result["datatype"] == "func"
+            assert not isinstance(result["datatype"], list)
+            
+    def test_group_by_multiple_values_array(self, evaluator):
+        """Test that multiple values become arrays in GROUP BY results"""
+        # Create test scenario with mixed datatypes
+        parser = BQLParser.from_string("SELECT sub, datatype, COUNT(*) GROUP BY sub")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+        
+        if len(results) > 0:
+            # Look for a result that has multiple datatypes
+            for result in results:
+                if "datatype" in result and isinstance(result["datatype"], list):
+                    # Found a subject with multiple datatypes
+                    assert len(result["datatype"]) > 1
+                    # All items should be strings
+                    assert all(isinstance(dt, str) for dt in result["datatype"])
+                    break
+                    
+    def test_group_by_preserves_null_handling(self, evaluator):
+        """Test that None values are handled correctly in auto-aggregation"""
+        parser = BQLParser.from_string("SELECT sub, run, COUNT(*) GROUP BY sub")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+        
+        if len(results) > 0:
+            # Some files might not have run entities
+            for result in results:
+                if "run" in result:
+                    run_value = result["run"]
+                    # Should be None, string, or list
+                    assert run_value is None or isinstance(run_value, (str, list))
+                    if isinstance(run_value, list):
+                        # If it's a list, all non-None values should be strings
+                        non_none_values = [v for v in run_value if v is not None]
+                        assert all(isinstance(v, str) for v in non_none_values)
+
+
+class TestQSMWorkflow:
+    """Test QSM-specific workflow scenarios"""
+    
+    def test_qsm_reconstruction_groups_with_filenames(self):
+        """Test QSM reconstruction groups include filename arrays (real QSM use case)"""
+        # Create a minimal test dataset with QSM-like structure
+        import tempfile
+        import json
+        from pathlib import Path
+        from biql.dataset import BIDSDataset
+        from biql.evaluator import BQLEvaluator
+        from biql.parser import BQLParser
+        
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir = Path(tmpdir)
+            
+            # Create dataset description
+            (tmpdir / "dataset_description.json").write_text(
+                json.dumps({"Name": "QSM Test", "BIDSVersion": "1.8.0"})
+            )
+            
+            # Create QSM files for testing
+            qsm_files = [
+                "sub-01/anat/sub-01_echo-01_part-mag_MEGRE.nii",
+                "sub-01/anat/sub-01_echo-01_part-phase_MEGRE.nii", 
+                "sub-01/anat/sub-01_echo-02_part-mag_MEGRE.nii",
+                "sub-01/anat/sub-01_echo-02_part-phase_MEGRE.nii",
+                "sub-02/anat/sub-02_acq-test_echo-01_part-mag_MEGRE.nii",
+                "sub-02/anat/sub-02_acq-test_echo-01_part-phase_MEGRE.nii"
+            ]
+            
+            for file_path in qsm_files:
+                full_path = tmpdir / file_path
+                full_path.parent.mkdir(parents=True, exist_ok=True)
+                full_path.touch()
+            
+            # Test the QSM reconstruction grouping query
+            dataset = BIDSDataset(tmpdir)
+            evaluator = BQLEvaluator(dataset)
+            
+            parser = BQLParser.from_string(
+                "SELECT filename, sub, acq, part, echo, COUNT(*) "
+                "WHERE (part=mag OR part=phase) AND suffix=MEGRE "
+                "GROUP BY sub, acq"
+            )
+            query = parser.parse()
+            results = evaluator.evaluate(query)
+            
+            assert len(results) == 2  # Two groups: sub-01 (no acq) and sub-02 (acq-test)
+            
+            for result in results:
+                # Each group should have basic fields
+                assert "sub" in result
+                assert "count" in result
+                assert result["count"] > 0
+                
+                # Filename should be an array of all files in the group
+                assert "filename" in result
+                if isinstance(result["filename"], list):
+                    assert len(result["filename"]) == result["count"]
+                    # All filenames should contain the subject ID
+                    assert all(result["sub"] in fname for fname in result["filename"])
+                else:
+                    # Single file case
+                    assert result["count"] == 1
+                    assert result["sub"] in result["filename"]
+                
+                # Part should show both mag and phase (if group has both)
+                if "part" in result and isinstance(result["part"], list):
+                    assert "mag" in result["part"] or "phase" in result["part"]
+                    
+                # Echo should show the echo numbers in the group
+                if "echo" in result:
+                    assert result["echo"] is not None
+            
+            # Verify subject 01 group (no acquisition)
+            sub01_group = next(r for r in results if r["sub"] == "01" and r.get("acq") is None)
+            assert sub01_group["count"] == 4  # 2 echoes × 2 parts
+            
+            # Verify subject 02 group (with acquisition)  
+            sub02_group = next(r for r in results if r["sub"] == "02" and r.get("acq") == "test")
+            assert sub02_group["count"] == 2  # 1 echo × 2 parts
 
 
 class TestBQLFormatter:
