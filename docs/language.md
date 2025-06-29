@@ -140,6 +140,35 @@ NOT datatype=func
 (sub=01 OR sub=02) AND datatype=func
 ```
 
+### Field Existence Checks
+
+Test whether a field exists and has a non-null value:
+
+```sql
+-- Files that have an acquisition parameter
+WHERE acq
+
+-- Files with RepetitionTime metadata
+WHERE metadata.RepetitionTime
+
+-- Files with participant age data
+WHERE participants.age
+```
+
+**Common Pattern - Entity Discovery:**
+```sql
+-- What acquisitions are available in the dataset?
+SELECT DISTINCT acq WHERE acq
+
+-- What echo times are used?
+SELECT DISTINCT metadata.EchoTime
+WHERE metadata.EchoTime
+ORDER BY metadata.EchoTime
+```
+
+{: .highlight }
+> **Field Existence vs Null Comparison:** `WHERE field` checks for field existence and non-null values. This filters out files where the field is missing or null, giving clean entity discovery results.
+
 ### Pattern Matching
 
 #### Wildcard Patterns

@@ -1095,6 +1095,119 @@ class TestBIQLEvaluator:
         # Should not crash, may return results based on string comparison
         assert isinstance(results, list)
 
+    def test_field_existence_checks(self, evaluator):
+        """Test field existence behavior with WHERE field syntax"""
+        # Test basic entity existence check
+        parser = BIQLParser.from_string("WHERE sub")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+
+        # All results should have sub field (since it's a core BIDS entity)
+        for result in results:
+            assert "sub" in result
+            assert result["sub"] is not None
+
+        # Test metadata field existence
+        parser = BIQLParser.from_string("WHERE metadata.RepetitionTime")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+
+        # Only files with RepetitionTime metadata should be returned
+        for result in results:
+            if "metadata" in result and result["metadata"]:
+                # If we have metadata, RepetitionTime should exist
+                metadata = result["metadata"]
+                if isinstance(metadata, dict):
+                    assert "RepetitionTime" in metadata or len(results) == 0
+
+        # Test with DISTINCT for entity discovery pattern
+        parser = BIQLParser.from_string("SELECT DISTINCT task WHERE task")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+
+        # All results should have non-null task values
+        for result in results:
+            assert "task" in result
+            assert result["task"] is not None
+            assert result["task"] != ""
+
+        # Test non-existent field existence check
+        parser = BIQLParser.from_string("WHERE nonexistent_field")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+
+        # Should return empty results since field doesn't exist
+        assert len(results) == 0
+
+    def test_field_existence_vs_comparison(self, evaluator):
+        """Test difference between field existence (WHERE field) and null comparison"""
+        # Get baseline - all files
+        parser = BIQLParser.from_string("SELECT filename")
+        query = parser.parse()
+        all_results = evaluator.evaluate(query)
+
+        # Test field existence filter with field included in SELECT
+        parser = BIQLParser.from_string("SELECT filename, run WHERE run")
+        query = parser.parse()
+        existence_results = evaluator.evaluate(query)
+
+        # Existence check should return subset of all results
+        assert len(existence_results) <= len(all_results)
+
+        # All existence results should have run field with non-null values
+        for result in existence_results:
+            assert "run" in result
+            assert result["run"] is not None
+
+        # Test with just WHERE clause (no SELECT) - should include all fields
+        parser = BIQLParser.from_string("WHERE run")
+        query = parser.parse()
+        no_select_results = evaluator.evaluate(query)
+
+        # Should include run field and it should be non-null
+        for result in no_select_results:
+            assert "run" in result
+            assert result["run"] is not None
+
+    def test_entity_discovery_patterns(self, evaluator):
+        """Test the entity discovery patterns from documentation examples"""
+        # Test: What acquisitions are available?
+        parser = BIQLParser.from_string("SELECT DISTINCT acq WHERE acq")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+
+        # Should only return files that have acq entity
+        for result in results:
+            assert "acq" in result
+            assert result["acq"] is not None
+            assert result["acq"] != ""
+
+        # Test: What echo times are used?
+        parser = BIQLParser.from_string(
+            "SELECT DISTINCT metadata.EchoTime WHERE metadata.EchoTime ORDER BY metadata.EchoTime"
+        )
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+
+        # Should only return files with EchoTime metadata
+        for result in results:
+            if "metadata.EchoTime" in result:
+                echo_time = result["metadata.EchoTime"]
+                assert echo_time is not None
+                # Should be a numeric value
+                if echo_time is not None:
+                    assert isinstance(echo_time, (int, float))
+
+        # Verify ordering if results exist
+        if len(results) > 1:
+            echo_times = [
+                r.get("metadata.EchoTime")
+                for r in results
+                if r.get("metadata.EchoTime") is not None
+            ]
+            if len(echo_times) > 1:
+                assert echo_times == sorted(echo_times)
+
     def test_not_operator(self, evaluator):
         """Test NOT operator functionality"""
         parser = BIQLParser.from_string("NOT datatype=func")
