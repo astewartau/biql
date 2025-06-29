@@ -1208,6 +1208,127 @@ class TestBIQLEvaluator:
             if len(echo_times) > 1:
                 assert echo_times == sorted(echo_times)
 
+    def test_distinct_with_vs_without_where_clause(self, evaluator):
+        """Test difference between DISTINCT with and without WHERE clause for null filtering"""
+        # Test with a field that likely has some null values (run)
+
+        # Get all distinct run values (including null)
+        parser = BIQLParser.from_string("SELECT DISTINCT run")
+        query = parser.parse()
+        all_runs = evaluator.evaluate(query)
+
+        # Get only non-null run values
+        parser = BIQLParser.from_string("SELECT DISTINCT run WHERE run")
+        query = parser.parse()
+        non_null_runs = evaluator.evaluate(query)
+
+        # The WHERE clause should filter out null values
+        assert len(non_null_runs) <= len(all_runs)
+
+        # Check that all non_null_runs actually have non-null run values
+        for result in non_null_runs:
+            assert "run" in result
+            assert result["run"] is not None
+
+        # Check if we found the null case (some files without run)
+        null_runs = [r for r in all_runs if r.get("run") is None]
+        non_null_runs_from_all = [r for r in all_runs if r.get("run") is not None]
+
+        if len(null_runs) > 0:
+            # We have files without run values - verify filtering works
+            assert len(non_null_runs) == len(non_null_runs_from_all)
+            assert len(all_runs) == len(non_null_runs) + len(null_runs)
+            print(
+                f"Found {len(null_runs)} files without run values - WHERE clause properly filtered them"
+            )
+        else:
+            # All files have run values - both queries should return same results
+            assert len(all_runs) == len(non_null_runs)
+            print(
+                "All files have run values - WHERE clause has no effect (both queries identical)"
+            )
+
+        # Test with a metadata field that's more likely to have nulls
+        parser = BIQLParser.from_string("SELECT DISTINCT metadata.EchoTime")
+        query = parser.parse()
+        all_echo_times = evaluator.evaluate(query)
+
+        parser = BIQLParser.from_string(
+            "SELECT DISTINCT metadata.EchoTime WHERE metadata.EchoTime"
+        )
+        query = parser.parse()
+        non_null_echo_times = evaluator.evaluate(query)
+
+        # Should filter out null metadata
+        assert len(non_null_echo_times) <= len(all_echo_times)
+
+        # All non-null results should have actual EchoTime values
+        for result in non_null_echo_times:
+            if "metadata.EchoTime" in result:
+                assert result["metadata.EchoTime"] is not None
+
+    def test_distinct_null_filtering_controlled_example(self):
+        """Test DISTINCT with/without WHERE using controlled dataset to show exact difference"""
+        import json
+        import tempfile
+        from pathlib import Path
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir = Path(tmpdir)
+            (tmpdir / "dataset_description.json").write_text(
+                json.dumps({"Name": "Null Test Dataset", "BIDSVersion": "1.8.0"})
+            )
+
+            # Create files: some with run, some without
+            test_files = [
+                "sub-01/func/sub-01_task-rest_run-01_bold.nii.gz",  # Has run
+                "sub-01/func/sub-01_task-rest_run-02_bold.nii.gz",  # Has run
+                "sub-01/anat/sub-01_T1w.nii.gz",  # No run (typical for anat)
+                "sub-02/func/sub-02_task-rest_run-01_bold.nii.gz",  # Has run
+                "sub-02/anat/sub-02_T1w.nii.gz",  # No run
+            ]
+
+            for file_path in test_files:
+                full_path = tmpdir / file_path
+                full_path.parent.mkdir(parents=True, exist_ok=True)
+                full_path.touch()
+
+            dataset = BIDSDataset(tmpdir)
+            evaluator = BIQLEvaluator(dataset)
+
+            # Test 1: All distinct run values (including null)
+            parser = BIQLParser.from_string("SELECT DISTINCT run")
+            query = parser.parse()
+            all_runs = evaluator.evaluate(query)
+
+            # Test 2: Only non-null run values
+            parser = BIQLParser.from_string("SELECT DISTINCT run WHERE run")
+            query = parser.parse()
+            non_null_runs = evaluator.evaluate(query)
+
+            # Verify the expected difference
+            print(f"All distinct runs: {[r.get('run') for r in all_runs]}")
+            print(f"Non-null runs: {[r.get('run') for r in non_null_runs]}")
+
+            # Should find: null, "01", "02" vs just "01", "02"
+            assert len(all_runs) == 3  # [null, "01", "02"]
+            assert len(non_null_runs) == 2  # ["01", "02"]
+
+            # Verify null is in all_runs but not in non_null_runs
+            null_count_all = len([r for r in all_runs if r.get("run") is None])
+            null_count_filtered = len(
+                [r for r in non_null_runs if r.get("run") is None]
+            )
+
+            assert null_count_all == 1  # One null entry in unfiltered results
+            assert null_count_filtered == 0  # No null entries in filtered results
+
+            # Verify the non-null entries match
+            runs_all = [r.get("run") for r in all_runs if r.get("run") is not None]
+            runs_filtered = [r.get("run") for r in non_null_runs]
+
+            assert sorted(runs_all) == sorted(runs_filtered)  # Same non-null values
+
     def test_not_operator(self, evaluator):
         """Test NOT operator functionality"""
         parser = BIQLParser.from_string("NOT datatype=func")
