@@ -128,6 +128,7 @@ class BIQLParser:
                     TokenType.MAX,
                     TokenType.MIN,
                     TokenType.SUM,
+                    TokenType.ARRAY_AGG,
                 ]:
                     # This is a function call
                     func_name = self._consume(self._current_token_type()).value
@@ -136,13 +137,38 @@ class BIQLParser:
                     # Handle function arguments
                     if self._current_token_type() == TokenType.STAR:
                         self._consume(TokenType.STAR)
-                        func_expr = f"{func_name}(*)"
+                        # Check for ARRAY_AGG(*) with WHERE clause
+                        if (
+                            func_name == "ARRAY_AGG"
+                            and self._current_token_type() == TokenType.WHERE
+                        ):
+                            self._consume(TokenType.WHERE)
+                            condition = self._parse_expression()
+                            self._consume(TokenType.RPAREN)
+                            condition_str = self._expr_to_string(condition)
+                            expr = f"ARRAY_AGG(* WHERE {condition_str})"
+                        else:
+                            self._consume(TokenType.RPAREN)
+                            func_expr = f"{func_name}(*)"
+                            expr = func_expr
                     else:
                         arg = self._parse_identifier_path()
-                        func_expr = f"{func_name}({arg})"
 
-                    self._consume(TokenType.RPAREN)
-                    expr = func_expr
+                        # Check for ARRAY_AGG with WHERE clause
+                        if (
+                            func_name == "ARRAY_AGG"
+                            and self._current_token_type() == TokenType.WHERE
+                        ):
+                            self._consume(TokenType.WHERE)
+                            condition = self._parse_expression()
+                            self._consume(TokenType.RPAREN)
+                            # Convert condition to string representation for now
+                            condition_str = self._expr_to_string(condition)
+                            expr = f"ARRAY_AGG({arg} WHERE {condition_str})"
+                        else:
+                            self._consume(TokenType.RPAREN)
+                            func_expr = f"{func_name}({arg})"
+                            expr = func_expr
                 else:
                     # Regular identifier path
                     expr = self._parse_identifier_path()
@@ -342,11 +368,11 @@ class BIQLParser:
         self._consume(TokenType.BY)
 
         fields = []
-        fields.append(self._consume(TokenType.IDENTIFIER).value)
+        fields.append(self._parse_identifier_path())
 
         while self._current_token_type() == TokenType.COMMA:
             self._consume(TokenType.COMMA)
-            fields.append(self._consume(TokenType.IDENTIFIER).value)
+            fields.append(self._parse_identifier_path())
 
         return fields
 
@@ -400,3 +426,37 @@ class BIQLParser:
             parts.append(self._consume(TokenType.IDENTIFIER).value)
 
         return ".".join(parts)
+
+    def _expr_to_string(self, expr: Expression) -> str:
+        """Convert an expression back to string representation"""
+        if isinstance(expr, BinaryOp):
+            left_str = self._expr_to_string(expr.left)
+            right_str = self._expr_to_string(expr.right)
+
+            # Map token types to string operators
+            op_map = {
+                TokenType.EQ: "=",
+                TokenType.NEQ: "!=",
+                TokenType.GT: ">",
+                TokenType.LT: "<",
+                TokenType.GTE: ">=",
+                TokenType.LTE: "<=",
+                TokenType.AND: "AND",
+                TokenType.OR: "OR",
+            }
+
+            op_str = op_map.get(expr.operator, str(expr.operator))
+            return f"{left_str} {op_str} {right_str}"
+
+        elif isinstance(expr, FieldAccess):
+            if expr.path:
+                return f"{expr.field}.{'.'.join(expr.path)}"
+            return expr.field
+
+        elif isinstance(expr, Literal):
+            if isinstance(expr.value, str):
+                return f"'{expr.value}'"
+            return str(expr.value)
+
+        else:
+            return str(expr)

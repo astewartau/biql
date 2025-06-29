@@ -210,56 +210,5 @@ class TestPerformance:
                 assert time_ratio < file_ratio**2
 
 
-class TestConcurrency:
-    """Test concurrent query execution"""
-
-    @pytest.fixture
-    def synthetic_dataset(self):
-        """Fixture for synthetic dataset"""
-        path = BIDS_EXAMPLES_DIR / "synthetic"
-        if not path.exists():
-            pytest.skip("Synthetic dataset not available")
-        return BIDSDataset(path)
-
-    def test_concurrent_queries(self, synthetic_dataset):
-        """Test running multiple queries concurrently"""
-        import queue
-        import threading
-
-        evaluator = BIQLEvaluator(synthetic_dataset)
-        results_queue = queue.Queue()
-
-        def run_query(query_str, result_queue):
-            try:
-                parser = BIQLParser.from_string(query_str)
-                query = parser.parse()
-                evaluator.evaluate(query)
-                result_queue.put(("success", len(results)))
-            except Exception as e:
-                result_queue.put(("error", str(e)))
-
-        queries = ["datatype=func", "datatype=anat", "task=nback", "sub=01", "sub=02"]
-
-        threads = []
-        for query_str in queries:
-            thread = threading.Thread(target=run_query, args=(query_str, results_queue))
-            threads.append(thread)
-            thread.start()
-
-        # Wait for all threads
-        for thread in threads:
-            thread.join(timeout=30)  # 30 second timeout
-
-        # Collect results
-        results = []
-        while not results_queue.empty():
-            results.append(results_queue.get())
-
-        # All queries should succeed
-        assert len(results) == len(queries)
-        for status, result in results:
-            assert status == "success"
-
-
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])

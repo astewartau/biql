@@ -81,6 +81,8 @@ SELECT MAX(run) AS max_run, MIN(run) AS min_run
 - `MAX(field)` - Maximum value
 - `MIN(field)` - Minimum value
 - `SUM(field)` - Sum of numeric values
+- `ARRAY_AGG(field)` - Collect values into array
+- `ARRAY_AGG(field WHERE condition)` - Collect filtered values into array
 
 ### Auto-Aggregation with GROUP BY
 
@@ -571,6 +573,13 @@ ORDER BY sub, ses, run
 SELECT sub, ses, acq, filename, COUNT(*) 
 WHERE (part=mag OR part=phase) AND suffix=MEGRE 
 GROUP BY sub, ses, acq
+
+-- Separate magnitude and phase files for QSM
+SELECT sub, ses, acq, run,
+       ARRAY_AGG(filename WHERE part='mag') AS mag_filenames,
+       ARRAY_AGG(filename WHERE part='phase') AS phase_filenames
+WHERE (part='mag' OR part='phase') AND suffix=MEGRE
+GROUP BY sub, ses, acq, run
 
 -- Multi-echo parameters
 SELECT DISTINCT echo, metadata.EchoTime 

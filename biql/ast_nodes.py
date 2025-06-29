@@ -93,6 +93,15 @@ class FunctionCall(Expression):
 
 
 @dataclass
+class ConditionalAggregateFunction(Expression):
+    """Conditional aggregate function (e.g., ARRAY_AGG(field WHERE condition))"""
+
+    name: str
+    field: Expression
+    condition: Optional[Expression] = None
+
+
+@dataclass
 class Query(ASTNode):
     """Complete BIQL query with all clauses"""
 

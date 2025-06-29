@@ -57,6 +57,7 @@ class TokenType(Enum):
     MAX = auto()
     MIN = auto()
     SUM = auto()
+    ARRAY_AGG = auto()
     DISTINCT = auto()
     AS = auto()
     IN = auto()
@@ -201,6 +202,7 @@ class BIQLLexer:
             "MAX": TokenType.MAX,
             "MIN": TokenType.MIN,
             "SUM": TokenType.SUM,
+            "ARRAY_AGG": TokenType.ARRAY_AGG,
             "DISTINCT": TokenType.DISTINCT,
             "AS": TokenType.AS,
             "IN": TokenType.IN,

@@ -243,6 +243,46 @@ class TestBIQLParser:
         assert "ses" in query.group_by
         assert "datatype" in query.group_by
 
+    def test_array_agg_parsing(self):
+        """Test parsing of ARRAY_AGG functions"""
+        # Test basic ARRAY_AGG
+        parser = BIQLParser.from_string("SELECT ARRAY_AGG(filename)")
+        query = parser.parse()
+
+        assert query.select_clause is not None
+        assert len(query.select_clause.items) == 1
+        assert query.select_clause.items[0][0] == "ARRAY_AGG(filename)"
+
+        # Test ARRAY_AGG with WHERE condition
+        parser = BIQLParser.from_string("SELECT ARRAY_AGG(filename WHERE part='mag')")
+        query = parser.parse()
+
+        assert query.select_clause is not None
+        assert len(query.select_clause.items) == 1
+        assert "ARRAY_AGG(filename WHERE part = 'mag')" in query.select_clause.items[0][0]
+
+        # Test ARRAY_AGG with alias
+        parser = BIQLParser.from_string(
+            "SELECT ARRAY_AGG(filename WHERE part='phase') AS phase_files"
+        )
+        query = parser.parse()
+
+        assert query.select_clause is not None
+        assert len(query.select_clause.items) == 1
+        assert query.select_clause.items[0][1] == "phase_files"
+
+        # Test multiple ARRAY_AGG functions
+        parser = BIQLParser.from_string(
+            "SELECT ARRAY_AGG(filename WHERE part='mag') AS mag_files, "
+            "ARRAY_AGG(filename WHERE part='phase') AS phase_files"
+        )
+        query = parser.parse()
+
+        assert query.select_clause is not None
+        assert len(query.select_clause.items) == 2
+        assert query.select_clause.items[0][1] == "mag_files"
+        assert query.select_clause.items[1][1] == "phase_files"
+
 
 class TestBIDSDataset:
     """Test BIDS dataset loading and indexing"""
@@ -446,6 +486,340 @@ class TestBIQLEvaluator:
             assert "count" in result
             assert result["count"] > 0
 
+    def test_aggregate_functions(self, evaluator):
+        """Test all aggregate functions: AVG, MAX, MIN, SUM"""
+        # Test AVG function
+        parser = BIQLParser.from_string("SELECT datatype, AVG(run) GROUP BY datatype")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+        if results:
+            for result in results:
+                assert "datatype" in result
+                if "avg" in result and result["avg"] is not None:
+                    assert isinstance(result["avg"], (int, float))
+
+        # Test MAX function
+        parser = BIQLParser.from_string("SELECT datatype, MAX(run) GROUP BY datatype")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+        if results:
+            for result in results:
+                assert "datatype" in result
+                if "max" in result and result["max"] is not None:
+                    assert isinstance(result["max"], (int, float))
+
+        # Test MIN function
+        parser = BIQLParser.from_string("SELECT datatype, MIN(run) GROUP BY datatype")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+        if results:
+            for result in results:
+                assert "datatype" in result
+                if "min" in result and result["min"] is not None:
+                    assert isinstance(result["min"], (int, float))
+
+        # Test SUM function
+        parser = BIQLParser.from_string("SELECT datatype, SUM(run) GROUP BY datatype")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+        if results:
+            for result in results:
+                assert "datatype" in result
+                if "sum" in result and result["sum"] is not None:
+                    assert isinstance(result["sum"], (int, float))
+
+        # Test multiple aggregate functions together
+        parser = BIQLParser.from_string(
+            "SELECT datatype, COUNT(*), AVG(run), MAX(run), MIN(run), SUM(run) GROUP BY datatype"
+        )
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+
+        if results:
+            for result in results:
+                assert "datatype" in result
+                assert "count" in result
+                assert isinstance(result["count"], int)
+                # Other aggregates may be None if no run values exist
+                for agg in ["avg", "max", "min", "sum"]:
+                    if agg in result and result[agg] is not None:
+                        assert isinstance(result[agg], (int, float))
+
+        # Test with aliases
+        parser = BIQLParser.from_string(
+            "SELECT datatype, AVG(run) AS average_run, MAX(run) AS max_run GROUP BY datatype"
+        )
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+
+        if results:
+            for result in results:
+                assert "datatype" in result
+                # Check aliases are used
+                if "average_run" in result:
+                    assert "avg" not in result
+                if "max_run" in result:
+                    assert "max" not in result
+
+    def test_array_agg_functionality(self, evaluator):
+        """Test ARRAY_AGG function with and without WHERE conditions"""
+        # Test basic ARRAY_AGG without WHERE
+        parser = BIQLParser.from_string(
+            "SELECT datatype, ARRAY_AGG(filename) GROUP BY datatype"
+        )
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+
+        if results:
+            for result in results:
+                assert "datatype" in result
+                assert "array_agg" in result
+                assert isinstance(result["array_agg"], list)
+
+        # Test ARRAY_AGG with WHERE condition
+        parser = BIQLParser.from_string(
+            "SELECT datatype, ARRAY_AGG(filename WHERE part='mag') AS mag_files GROUP BY datatype"
+        )
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+
+        if results:
+            for result in results:
+                assert "datatype" in result
+                assert "mag_files" in result
+                assert isinstance(result["mag_files"], list)
+                # All files in mag_files should contain 'mag' in their name
+                for filename in result["mag_files"]:
+                    assert "mag" in filename.lower()
+
+        # Test ARRAY_AGG with different WHERE conditions
+        parser = BIQLParser.from_string(
+            "SELECT sub, ARRAY_AGG(filename WHERE datatype='func') AS func_files GROUP BY sub"
+        )
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+
+        if results:
+            for result in results:
+                assert "sub" in result
+                assert "func_files" in result
+                assert isinstance(result["func_files"], list)
+
+        # Test multiple ARRAY_AGG functions with different conditions
+        parser = BIQLParser.from_string(
+            "SELECT sub, ARRAY_AGG(filename WHERE datatype='func') AS func_files, "
+            "ARRAY_AGG(filename WHERE datatype='anat') AS anat_files GROUP BY sub"
+        )
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+
+        if results:
+            for result in results:
+                assert "sub" in result
+                assert "func_files" in result
+                assert "anat_files" in result
+                assert isinstance(result["func_files"], list)
+                assert isinstance(result["anat_files"], list)
+
+        # Test the QSM use case - similar to user's example
+        parser = BIQLParser.from_string(
+            "SELECT sub, ses, acq, run, "
+            "ARRAY_AGG(filename WHERE part='mag') AS mag_filenames, "
+            "ARRAY_AGG(filename WHERE part='phase') AS phase_filenames "
+            "WHERE (part='mag' OR part='phase') GROUP BY sub, ses, acq, run"
+        )
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+
+        # Verify structure - should work even if dataset doesn't have these specific files
+        if results:
+            for result in results:
+                assert "sub" in result
+                assert "ses" in result
+                assert "acq" in result
+                assert "run" in result
+                assert "mag_filenames" in result
+                assert "phase_filenames" in result
+                assert isinstance(result["mag_filenames"], list)
+                assert isinstance(result["phase_filenames"], list)
+
+
+    def test_array_agg_edge_cases(self, evaluator):
+        """Test edge cases for ARRAY_AGG functionality"""
+        # Test ARRAY_AGG with non-existent field
+        parser = BIQLParser.from_string("SELECT ARRAY_AGG(nonexistent_field) AS missing GROUP BY datatype")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+        
+        if results:
+            for result in results:
+                assert "missing" in result
+                # Should be empty list or list with None values filtered out
+                assert isinstance(result["missing"], list)
+        
+        # Test ARRAY_AGG with WHERE condition that matches nothing
+        parser = BIQLParser.from_string("SELECT ARRAY_AGG(filename WHERE part='nonexistent') AS empty_files GROUP BY datatype")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+        
+        if results:
+            for result in results:
+                assert "empty_files" in result
+                # Should be empty list when condition matches nothing
+                assert result["empty_files"] == []
+        
+        # Test ARRAY_AGG without GROUP BY (single row)
+        parser = BIQLParser.from_string("SELECT ARRAY_AGG(filename WHERE datatype='func') AS func_files")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+        
+        # Should work and return arrays even without GROUP BY
+        assert isinstance(results, list)
+        if results:
+            for result in results:
+                if "func_files" in result:
+                    assert isinstance(result["func_files"], list)
+
+    def test_array_agg_condition_types(self, evaluator):
+        """Test different types of WHERE conditions in ARRAY_AGG"""
+        # Test equality condition
+        parser = BIQLParser.from_string("SELECT ARRAY_AGG(filename WHERE datatype='func') AS func_files GROUP BY sub")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+        # Should parse and execute without error
+        
+        # Test inequality condition  
+        parser = BIQLParser.from_string("SELECT ARRAY_AGG(filename WHERE datatype!='dwi') AS non_dwi_files GROUP BY sub")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+        # Should parse and execute without error
+        
+        # Test with quoted values
+        parser = BIQLParser.from_string("SELECT ARRAY_AGG(filename WHERE suffix='bold') AS bold_files GROUP BY sub")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+        # Should parse and execute without error
+        
+        # Test with numeric-like values
+        parser = BIQLParser.from_string("SELECT ARRAY_AGG(filename WHERE run='01') AS run01_files GROUP BY sub")
+        query = parser.parse()  
+        results = evaluator.evaluate(query)
+        # Should parse and execute without error
+
+    def test_array_agg_complex_conditions(self, evaluator):
+        """Test complex WHERE conditions with AND/OR in ARRAY_AGG"""
+        # Test AND condition - should only return .nii files that are phase
+        parser = BIQLParser.from_string("SELECT ARRAY_AGG(filename WHERE part='phase' AND extension='.nii') AS phase_nii_files, ARRAY_AGG(filename WHERE part='phase') AS all_phase_files GROUP BY sub")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+        
+        # Verify parsing works and doesn't crash
+        assert isinstance(results, list)
+        
+        # Check that the AND condition filters correctly
+        for result in results:
+            if "phase_nii_files" in result and "all_phase_files" in result:
+                phase_nii = result["phase_nii_files"]
+                all_phase = result["all_phase_files"]
+                
+                # phase_nii_files should be a subset of all_phase_files
+                if phase_nii and all_phase:
+                    assert isinstance(phase_nii, list)
+                    assert isinstance(all_phase, list)
+                    # All files in phase_nii should end with .nii
+                    for filename in phase_nii:
+                        assert filename.endswith('.nii'), f"Expected .nii file, got {filename}"
+                    # phase_nii should have <= files than all_phase (since it's more restrictive)
+                    assert len(phase_nii) <= len(all_phase)
+        
+        # Test OR condition
+        parser = BIQLParser.from_string("SELECT ARRAY_AGG(filename WHERE part='mag' OR part='phase') AS mag_or_phase_files GROUP BY sub")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+        
+        assert isinstance(results, list)
+        
+        # Test nested conditions with parentheses
+        parser = BIQLParser.from_string("SELECT ARRAY_AGG(filename WHERE (part='phase' AND extension='.nii') OR (part='mag' AND extension='.json')) AS mixed_files GROUP BY sub")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+        
+        assert isinstance(results, list)
+
+    def test_array_agg_with_aliases(self, evaluator):
+        """Test ARRAY_AGG with various alias configurations"""
+        # Test single ARRAY_AGG with alias
+        parser = BIQLParser.from_string("SELECT ARRAY_AGG(filename WHERE part='mag') AS magnitude_files GROUP BY sub")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+        
+        if results:
+            for result in results:
+                assert "magnitude_files" in result
+                assert "array_agg" not in result  # Should use alias, not default name
+                assert isinstance(result["magnitude_files"], list)
+        
+        # Test multiple ARRAY_AGG with different aliases
+        parser = BIQLParser.from_string(
+            "SELECT sub, "
+            "ARRAY_AGG(filename WHERE echo='1') AS echo1_files, "
+            "ARRAY_AGG(filename WHERE echo='2') AS echo2_files "
+            "GROUP BY sub"
+        )
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+        
+        if results:
+            for result in results:
+                assert "sub" in result
+                assert "echo1_files" in result
+                assert "echo2_files" in result
+                assert isinstance(result["echo1_files"], list)
+                assert isinstance(result["echo2_files"], list)
+
+    def test_format_clause_in_query(self, evaluator):
+        """Test FORMAT clause within queries"""
+        # Test with json format
+        parser = BIQLParser.from_string(
+            "SELECT sub, datatype WHERE datatype=func FORMAT json"
+        )
+        query = parser.parse()
+        assert query.format == "json"
+
+        # Test with table format
+        parser = BIQLParser.from_string("sub=01 FORMAT table")
+        query = parser.parse()
+        assert query.format == "table"
+
+        # Test with csv format
+        parser = BIQLParser.from_string("SELECT * FORMAT csv")
+        query = parser.parse()
+        assert query.format == "csv"
+
+        # Test with tsv format
+        parser = BIQLParser.from_string(
+            "SELECT filename, sub, datatype GROUP BY datatype FORMAT tsv"
+        )
+        query = parser.parse()
+        assert query.format == "tsv"
+
+        # Test with paths format
+        parser = BIQLParser.from_string("datatype=anat FORMAT paths")
+        query = parser.parse()
+        assert query.format == "paths"
+
+        # Test combined with all other clauses
+        parser = BIQLParser.from_string(
+            "SELECT sub, COUNT(*) WHERE datatype=func GROUP BY sub HAVING COUNT(*) > 1 ORDER BY sub DESC FORMAT json"
+        )
+        query = parser.parse()
+        assert query.format == "json"
+        assert query.select_clause is not None
+        assert query.where_clause is not None
+        assert query.group_by is not None
+        assert query.having is not None
+        assert query.order_by is not None
+
     def test_order_by_functionality(self, evaluator):
         """Test ORDER BY functionality"""
         parser = BIQLParser.from_string("datatype=func ORDER BY sub ASC")
@@ -456,6 +830,60 @@ class TestBIQLEvaluator:
             # Check that results are ordered by subject
             subjects = [r.get("sub", "") for r in results]
             assert subjects == sorted(subjects)
+
+    def test_complex_order_by_scenarios(self, evaluator):
+        """Test complex ORDER BY scenarios"""
+        # Note: ORDER BY aggregate functions not supported in current implementation
+
+        # Test mixed ASC/DESC ordering
+        parser = BIQLParser.from_string("ORDER BY datatype ASC, sub DESC")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+
+        # Test ordering with NULL values
+        parser = BIQLParser.from_string("SELECT sub, run ORDER BY run ASC")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+
+        # Check that non-null values are sorted correctly
+        non_null_runs = []
+        for result in results:
+            if result.get("run") is not None:
+                non_null_runs.append(result["run"])
+
+        # Convert to comparable types and verify sorting
+        if non_null_runs:
+            # Try to convert to int if possible for proper numeric sorting
+            try:
+                numeric_runs = [int(r) for r in non_null_runs]
+                assert numeric_runs == sorted(numeric_runs)
+            except ValueError:
+                # Fall back to string comparison
+                assert non_null_runs == sorted(non_null_runs)
+
+        # Test ordering by multiple fields
+        parser = BIQLParser.from_string("ORDER BY sub ASC, ses ASC, run ASC")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+
+        # Verify complex ordering
+        for i in range(1, len(results)):
+            prev = results[i - 1]
+            curr = results[i]
+
+            # Primary sort by sub
+            if prev.get("sub") and curr.get("sub"):
+                if prev["sub"] < curr["sub"]:
+                    continue
+                elif prev["sub"] == curr["sub"]:
+                    # Secondary sort by ses
+                    if prev.get("ses") and curr.get("ses"):
+                        if prev["ses"] < curr["ses"]:
+                            continue
+                        elif prev["ses"] == curr["ses"]:
+                            # Tertiary sort by run
+                            if prev.get("run") and curr.get("run"):
+                                assert prev["run"] <= curr["run"]
 
     def test_group_by_auto_aggregation(self, evaluator):
         """Test auto-aggregation of non-grouped fields in GROUP BY queries"""
@@ -1122,6 +1550,44 @@ class TestIntegration:
             if "RepetitionTime" in metadata:
                 assert float(metadata["RepetitionTime"]) > 0
 
+        # Test nested metadata access
+        parser = BIQLParser.from_string("metadata.SliceTiming[0]>0")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+
+        # Test multiple metadata field comparisons
+        parser = BIQLParser.from_string(
+            "metadata.RepetitionTime>1 AND metadata.EchoTime<1"
+        )
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+
+        for result in results:
+            metadata = result.get("metadata", {})
+            if "RepetitionTime" in metadata and "EchoTime" in metadata:
+                assert float(metadata["RepetitionTime"]) > 1
+                assert float(metadata["EchoTime"]) < 1
+
+        # Test metadata inheritance from different levels
+        parser = BIQLParser.from_string(
+            "SELECT filename, metadata.TaskName WHERE metadata.TaskName IS NOT NULL"
+        )
+        query = parser.parse()
+        # Even though IS NOT NULL isn't supported, the query should parse
+
+        # Test complex metadata queries with SELECT
+        parser = BIQLParser.from_string(
+            "SELECT sub, datatype, metadata.RepetitionTime, metadata.EchoTime WHERE datatype=func"
+        )
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+
+        for result in results:
+            assert "sub" in result
+            assert "datatype" in result
+            # Metadata fields should be present even if None
+            assert "metadata.RepetitionTime" in result or "metadata.EchoTime" in result
+
     def test_participants_integration(self, synthetic_dataset_path):
         """Test integration with participants data"""
         dataset = BIDSDataset(synthetic_dataset_path)
@@ -1137,6 +1603,43 @@ class TestIntegration:
         for result in results:
             if "participants.age" in result and result["participants.age"] is not None:
                 assert int(result["participants.age"]) > 25
+
+        # Test combined participant and entity filtering
+        parser = BIQLParser.from_string("datatype=func AND participants.sex=M")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+
+        for result in results:
+            assert result["datatype"] == "func"
+            # Check participant data if available
+            if "participants" in result and result["participants"]:
+                assert result["participants"].get("sex") == "M"
+
+        # Test all participant fields
+        parser = BIQLParser.from_string(
+            "SELECT sub, participants.age, participants.sex, participants.handedness, "
+            "participants.site WHERE participants.handedness=R"
+        )
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+
+        for result in results:
+            if (
+                "participants.handedness" in result
+                and result["participants.handedness"] is not None
+            ):
+                assert result["participants.handedness"] == "R"
+
+        # Test participant queries with GROUP BY
+        parser = BIQLParser.from_string(
+            "SELECT participants.sex, COUNT(*) GROUP BY participants.sex"
+        )
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+
+        # Should have grouped by sex
+        sex_values = [r.get("participants.sex") for r in results]
+        assert len(sex_values) == len(set(sex_values))  # All unique
 
     def test_pattern_matching_queries(self, synthetic_dataset_path):
         """Test pattern matching functionality"""
@@ -1160,6 +1663,56 @@ class TestIntegration:
         for result in results:
             if "sub" in result:
                 assert result["sub"] in ["01", "02", "03"]
+
+        # Test question mark wildcard matching
+        parser = BIQLParser.from_string("sub=0?")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+
+        for result in results:
+            if "sub" in result:
+                # Should match subjects like 01, 02, 03, etc.
+                assert len(result["sub"]) == 2
+                assert result["sub"][0] == "0"
+
+    def test_derivatives_entity_types(self, synthetic_dataset_path):
+        """Test support for derivatives-specific entity types"""
+        dataset = BIDSDataset(synthetic_dataset_path)
+        evaluator = BIQLEvaluator(dataset)
+
+        # Test querying atlas entity
+        parser = BIQLParser.from_string("atlas=AAL")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+        # May return empty if no atlas files exist, but should not error
+
+        # Test querying roi entity
+        parser = BIQLParser.from_string("roi=hippocampus")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+        # May return empty if no roi files exist, but should not error
+
+        # Test querying model entity
+        parser = BIQLParser.from_string("model=glm")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+        # May return empty if no model files exist, but should not error
+
+        # Test combined derivatives query
+        parser = BIQLParser.from_string("datatype=anat AND atlas=*")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+
+        # Test SELECT with derivatives entities
+        parser = BIQLParser.from_string("SELECT sub, atlas, roi WHERE datatype=anat")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+
+        # All results should have the requested fields (even if None)
+        for result in results:
+            assert "sub" in result
+            assert "atlas" in result
+            assert "roi" in result
 
 
 class TestErrorHandling:

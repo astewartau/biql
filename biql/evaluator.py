@@ -281,9 +281,162 @@ class BIQLEvaluator:
                 agg_result[field] = key[i]
             agg_result["_count"] = len(group)
             agg_result["_group"] = group
+
+            # Pre-compute aggregate values for the group
+            agg_result["_aggregates"] = self._compute_aggregates(group)
+
             aggregated.append(agg_result)
 
         return aggregated
+
+    def _compute_aggregates(self, group: List[Dict]) -> Dict[str, Dict[str, Any]]:
+        """Compute aggregate values for a group of results"""
+        aggregates = defaultdict(dict)
+
+        # Collect all numeric fields from the group
+        numeric_fields = set()
+        for item in group:
+            for key, value in item.items():
+                if key not in [
+                    "metadata",
+                    "participants",
+                    "filepath",
+                    "relative_path",
+                    "filename",
+                ]:
+                    # Try to convert to number
+                    try:
+                        float(value) if value is not None else None
+                        numeric_fields.add(key)
+                    except (ValueError, TypeError):
+                        pass
+
+        # Compute aggregates for each numeric field
+        for field in numeric_fields:
+            values = []
+            for item in group:
+                value = self._get_nested_value(item, field)
+                if value is not None:
+                    try:
+                        num_value = float(value)
+                        values.append(num_value)
+                    except (ValueError, TypeError):
+                        pass
+
+            if values:
+                aggregates[field]["count"] = len(values)
+                aggregates[field]["sum"] = sum(values)
+                aggregates[field]["avg"] = sum(values) / len(values)
+                aggregates[field]["min"] = min(values)
+                aggregates[field]["max"] = max(values)
+
+        return dict(aggregates)
+
+    def _evaluate_array_agg_condition(self, item: Dict, condition_str: str) -> bool:
+        """Evaluate a condition for ARRAY_AGG WHERE clause"""
+        try:
+            # Import here to avoid circular imports
+            from .parser import BIQLParser
+            
+            # Parse the condition string as an expression
+            parser = BIQLParser.from_string(f"WHERE {condition_str}")
+            query = parser.parse()
+            
+            if query.where_clause:
+                # Evaluate the expression against the item dictionary
+                return self._evaluate_expression_dict(item, query.where_clause.condition)
+            else:
+                return False
+                
+        except Exception as e:
+            # Fall back to simple condition parsing for backwards compatibility
+            try:
+                if "=" in condition_str and " AND " not in condition_str and " OR " not in condition_str:
+                    parts = condition_str.split("=", 1)
+                    field = parts[0].strip()
+                    value = parts[1].strip().strip("'\"")  # Remove quotes
+
+                    item_value = self._get_nested_value(item, field)
+                    return str(item_value) == value if item_value is not None else False
+                elif "!=" in condition_str and " AND " not in condition_str and " OR " not in condition_str:
+                    parts = condition_str.split("!=", 1)
+                    field = parts[0].strip()
+                    value = parts[1].strip().strip("'\"")  # Remove quotes
+
+                    item_value = self._get_nested_value(item, field)
+                    return str(item_value) != value if item_value is not None else True
+                else:
+                    return False
+            except Exception:
+                return False
+
+    def _evaluate_expression_dict(self, item: Dict, expr: Expression) -> bool:
+        """Evaluate an expression against an item dictionary (for ARRAY_AGG conditions)"""
+        if isinstance(expr, BinaryOp):
+            if expr.operator == TokenType.AND:
+                return self._evaluate_expression_dict(
+                    item, expr.left
+                ) and self._evaluate_expression_dict(item, expr.right)
+            elif expr.operator == TokenType.OR:
+                return self._evaluate_expression_dict(
+                    item, expr.left
+                ) or self._evaluate_expression_dict(item, expr.right)
+            else:
+                # Comparison operators
+                left_val = self._get_value_dict(item, expr.left)
+                # For comparison right side, handle FieldAccess as literal values
+                if isinstance(expr.right, FieldAccess) and expr.right.path is None:
+                    # Bare identifier on right side should be treated as literal
+                    right_val = expr.right.field
+                else:
+                    right_val = self._get_value_dict(item, expr.right)
+                return self._compare(left_val, expr.operator, right_val)
+
+        elif isinstance(expr, UnaryOp):
+            if expr.operator == TokenType.NOT:
+                return not self._evaluate_expression_dict(item, expr.operand)
+
+        elif isinstance(expr, FieldAccess):
+            # Simple field existence check
+            return self._get_value_dict(item, expr) is not None
+
+        return False
+
+    def _get_value_dict(self, item: Dict, expr: Expression) -> Any:
+        """Get value from item dictionary based on expression (for ARRAY_AGG conditions)"""
+        if isinstance(expr, FieldAccess):
+            if expr.path:
+                # Metadata or participants access
+                if expr.field == "metadata" and expr.path:
+                    value = item.get('metadata', {})
+                    for part in expr.path:
+                        if isinstance(value, dict) and part in value:
+                            value = value[part]
+                        else:
+                            return None
+                    return value
+                elif expr.field == "participants" and expr.path:
+                    value = item.get('participants', {})
+                    for part in expr.path:
+                        if isinstance(value, dict) and part in value:
+                            value = value[part]
+                        else:
+                            return None
+                    return value
+            else:
+                # Entity access - return the value from item
+                return item.get(expr.field)
+
+        elif isinstance(expr, Literal):
+            return expr.value
+
+        elif isinstance(expr, Range):
+            return (expr.start, expr.end)
+
+        elif isinstance(expr, ListExpression):
+            return [self._get_literal_value(item) for item in expr.items]
+
+        return None
 
     def _evaluate_having(self, grouped_result: Dict, having_expr: Expression) -> bool:
         """Evaluate HAVING clause on grouped results"""
@@ -332,6 +485,11 @@ class BIQLEvaluator:
         value = self._get_nested_value(result, field)
         if value is None:
             return ""
+        
+        # For arrays (from GROUP BY auto-aggregation), use the first element for sorting
+        if isinstance(value, list) and value:
+            return value[0]
+        
         return value
 
     def _get_nested_value(self, result: Dict, field: str) -> Any:
@@ -360,13 +518,132 @@ class BIQLEvaluator:
                 if item == "*":
                     selected = result.copy()
                 elif item.startswith("COUNT("):
-                    # Handle aggregate functions
+                    # Handle COUNT aggregate function
                     if "_count" in result:
                         key = alias if alias else "count"
                         selected[key] = result["_count"]
                     else:
                         key = alias if alias else "count"
                         selected[key] = 1
+                elif item.startswith("ARRAY_AGG("):
+                    # Handle ARRAY_AGG aggregate function
+                    key = alias if alias else "array_agg"
+
+                    if "_group" in result:
+                        # Parse ARRAY_AGG syntax
+                        if " WHERE " in item:
+                            # ARRAY_AGG(field WHERE condition)
+                            parts = item[10:-1].split(
+                                " WHERE ", 1
+                            )  # Remove "ARRAY_AGG(" and ")"
+                            field_name = parts[0].strip()
+                            condition_str = parts[1].strip()
+
+                            # Collect values that match the condition
+                            values = []
+                            seen = set()
+                            for group_item in result["_group"]:
+                                # Evaluate the condition for this item
+                                if self._evaluate_array_agg_condition(
+                                    group_item, condition_str
+                                ):
+                                    if field_name == "*":
+                                        raise BIQLEvaluationError(
+                                            "Wildcard (*) is not supported in ARRAY_AGG. Please specify a field name."
+                                        )
+                                    else:
+                                        value = self._get_nested_value(
+                                            group_item, field_name
+                                        )
+
+                                    if value is not None and value not in seen:
+                                        values.append(value)
+                                        seen.add(value)
+
+                            selected[key] = sorted(values)
+                        else:
+                            # Regular ARRAY_AGG(field) - same as auto-aggregation
+                            field_match = item[10:-1]  # Remove "ARRAY_AGG(" and ")"
+                            values = []
+                            seen = set()
+                            for group_item in result["_group"]:
+                                if field_match == "*":
+                                    raise BIQLEvaluationError(
+                                        "Wildcard (*) is not supported in ARRAY_AGG. Please specify a field name."
+                                    )
+                                else:
+                                    value = self._get_nested_value(
+                                        group_item, field_match
+                                    )
+
+                                if value is not None and value not in seen:
+                                    values.append(value)
+                                    seen.add(value)
+
+                            selected[key] = sorted(values)
+                    else:
+                        # Single row - return as single-item array
+                        field_match = item[10:-1]  # Remove "ARRAY_AGG(" and ")"
+                        if " WHERE " in field_match:
+                            parts = field_match.split(" WHERE ", 1)
+                            field_name = parts[0].strip()
+                            condition_str = parts[1].strip()
+
+                            if self._evaluate_array_agg_condition(
+                                result, condition_str
+                            ):
+                                if field_name == "*":
+                                    raise BIQLEvaluationError(
+                                        "Wildcard (*) is not supported in ARRAY_AGG. Please specify a field name."
+                                    )
+                                else:
+                                    value = self._get_nested_value(result, field_name)
+                                selected[key] = [value] if value is not None else []
+                            else:
+                                selected[key] = []
+                        else:
+                            if field_match == "*":
+                                raise BIQLEvaluationError(
+                                    "Wildcard (*) is not supported in ARRAY_AGG. Please specify a field name."
+                                )
+                            else:
+                                value = self._get_nested_value(result, field_match)
+                            selected[key] = [value] if value is not None else []
+
+                elif item.startswith(("AVG(", "MAX(", "MIN(", "SUM(")):
+                    # Handle other aggregate functions
+                    func_name = item.split("(")[0].lower()
+                    # Extract field name from function call
+                    field_match = item[
+                        len(func_name) + 1 : -1
+                    ]  # Remove function name and parentheses
+
+                    if "_aggregates" in result and field_match in result["_aggregates"]:
+                        key = alias if alias else func_name
+                        if func_name in result["_aggregates"][field_match]:
+                            selected[key] = result["_aggregates"][field_match][
+                                func_name
+                            ]
+                        else:
+                            selected[key] = None
+                    else:
+                        # If no aggregates, compute on the fly for single row
+                        if "_group" not in result:
+                            try:
+                                value = self._get_nested_value(result, field_match)
+                                if value is not None:
+                                    num_value = float(value)
+                                    key = alias if alias else func_name
+                                    selected[key] = num_value
+                                else:
+                                    key = alias if alias else func_name
+                                    selected[key] = None
+                            except (ValueError, TypeError):
+                                key = alias if alias else func_name
+                                selected[key] = None
+                        else:
+                            key = alias if alias else func_name
+                            selected[key] = None
                 else:
                     # Handle regular field selection
                     key = alias if alias else item
@@ -382,11 +659,11 @@ class BIQLEvaluator:
                                 values.append(value)
                                 seen.add(value)
 
-                        # Single values: string; multiple values: array
+                        # Single values: string; multiple values: array (sorted)
                         if len(values) == 1:
                             selected[key] = values[0]
                         elif len(values) > 1:
-                            selected[key] = values
+                            selected[key] = sorted(values)
                         else:
                             selected[key] = None
                     else:

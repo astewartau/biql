@@ -304,6 +304,68 @@ class TestCLI:
         assert result.returncode == 0
         # Should not error, even if no results
 
+    @pytest.mark.skip(reason="--profile option not implemented yet")
+    def test_profile_option(self, synthetic_dataset_path):
+        """Test --profile option for performance profiling"""
+        result = self.run_biql_command(
+            ["--profile", "SELECT * WHERE datatype=func"], synthetic_dataset_path
+        )
+        # When implemented, should show timing information
+        assert result.returncode == 0
+        assert (
+            "ms" in result.stdout
+            or "seconds" in result.stdout
+            or "time" in result.stdout.lower()
+        )
+
+    @pytest.mark.skip(reason="Environment variables not implemented yet")
+    def test_environment_variables(self, synthetic_dataset_path):
+        """Test BIQL_DATASET_PATH and BIQL_OUTPUT_FORMAT environment variables"""
+        import os
+
+        # Test BIQL_DATASET_PATH
+        env = os.environ.copy()
+        env["BIQL_DATASET_PATH"] = synthetic_dataset_path
+
+        # Run without --dataset flag
+        cmd = [sys.executable, "-m", "biql.cli", "sub=01"]
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            cwd=Path(__file__).parent.parent,
+            env=env,
+        )
+
+        # Should use dataset from env variable
+        if result.returncode == 0:
+            output = json.loads(result.stdout)
+            assert len(output) > 0
+            for item in output:
+                assert item["sub"] == "01"
+
+        # Test BIQL_OUTPUT_FORMAT
+        env["BIQL_OUTPUT_FORMAT"] = "table"
+        cmd = [
+            sys.executable,
+            "-m",
+            "biql.cli",
+            "sub=01",
+            "--dataset",
+            synthetic_dataset_path,
+        ]
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            cwd=Path(__file__).parent.parent,
+            env=env,
+        )
+
+        # Should use table format from env variable
+        if result.returncode == 0:
+            assert "|" in result.stdout  # Table format uses pipes
+
 
 class TestCLIEdgeCases:
     """Test CLI edge cases and error conditions"""

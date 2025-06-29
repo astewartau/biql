@@ -93,12 +93,6 @@ echo $?  # 0 for valid syntax, 1 for invalid
 
 **Use case**: Automated syntax checking in scripts or CI/CD pipelines.
 
-#### `--explain`
-Show query execution plan without running the query.
-
-```bash
-biql --explain "SELECT sub WHERE datatype=func GROUP BY sub"
-```
 
 ### Information Options
 
@@ -406,19 +400,6 @@ for sub in $(biql "SELECT DISTINCT sub" --format json | jq -r '.[].sub'); do
 done
 ```
 
-### Concurrent Query Support
-
-BIQL supports multiple simultaneous queries safely:
-
-```bash
-# Run multiple queries in parallel
-biql "datatype=anat" --format paths > anat_files.txt &
-biql "datatype=func" --format paths > func_files.txt &
-biql "datatype=dwi" --format paths > dwi_files.txt &
-wait
-```
-
-**Thread Safety**: All query operations are thread-safe and can run concurrently without data corruption.
 
 ## Troubleshooting
 
