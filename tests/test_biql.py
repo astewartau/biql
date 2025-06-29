@@ -259,7 +259,9 @@ class TestBIQLParser:
 
         assert query.select_clause is not None
         assert len(query.select_clause.items) == 1
-        assert "ARRAY_AGG(filename WHERE part = 'mag')" in query.select_clause.items[0][0]
+        assert (
+            "ARRAY_AGG(filename WHERE part = 'mag')" in query.select_clause.items[0][0]
+        )
 
         # Test ARRAY_AGG with alias
         parser = BIQLParser.from_string(
@@ -643,36 +645,41 @@ class TestBIQLEvaluator:
                 assert isinstance(result["mag_filenames"], list)
                 assert isinstance(result["phase_filenames"], list)
 
-
     def test_array_agg_edge_cases(self, evaluator):
         """Test edge cases for ARRAY_AGG functionality"""
         # Test ARRAY_AGG with non-existent field
-        parser = BIQLParser.from_string("SELECT ARRAY_AGG(nonexistent_field) AS missing GROUP BY datatype")
+        parser = BIQLParser.from_string(
+            "SELECT ARRAY_AGG(nonexistent_field) AS missing GROUP BY datatype"
+        )
         query = parser.parse()
         results = evaluator.evaluate(query)
-        
+
         if results:
             for result in results:
                 assert "missing" in result
                 # Should be empty list or list with None values filtered out
                 assert isinstance(result["missing"], list)
-        
+
         # Test ARRAY_AGG with WHERE condition that matches nothing
-        parser = BIQLParser.from_string("SELECT ARRAY_AGG(filename WHERE part='nonexistent') AS empty_files GROUP BY datatype")
+        parser = BIQLParser.from_string(
+            "SELECT ARRAY_AGG(filename WHERE part='nonexistent') AS empty_files GROUP BY datatype"
+        )
         query = parser.parse()
         results = evaluator.evaluate(query)
-        
+
         if results:
             for result in results:
                 assert "empty_files" in result
                 # Should be empty list when condition matches nothing
                 assert result["empty_files"] == []
-        
+
         # Test ARRAY_AGG without GROUP BY (single row)
-        parser = BIQLParser.from_string("SELECT ARRAY_AGG(filename WHERE datatype='func') AS func_files")
+        parser = BIQLParser.from_string(
+            "SELECT ARRAY_AGG(filename WHERE datatype='func') AS func_files"
+        )
         query = parser.parse()
         results = evaluator.evaluate(query)
-        
+
         # Should work and return arrays even without GROUP BY
         assert isinstance(results, list)
         if results:
@@ -683,82 +690,100 @@ class TestBIQLEvaluator:
     def test_array_agg_condition_types(self, evaluator):
         """Test different types of WHERE conditions in ARRAY_AGG"""
         # Test equality condition
-        parser = BIQLParser.from_string("SELECT ARRAY_AGG(filename WHERE datatype='func') AS func_files GROUP BY sub")
+        parser = BIQLParser.from_string(
+            "SELECT ARRAY_AGG(filename WHERE datatype='func') AS func_files GROUP BY sub"
+        )
         query = parser.parse()
         results = evaluator.evaluate(query)
         # Should parse and execute without error
-        
-        # Test inequality condition  
-        parser = BIQLParser.from_string("SELECT ARRAY_AGG(filename WHERE datatype!='dwi') AS non_dwi_files GROUP BY sub")
+
+        # Test inequality condition
+        parser = BIQLParser.from_string(
+            "SELECT ARRAY_AGG(filename WHERE datatype!='dwi') AS non_dwi_files GROUP BY sub"
+        )
         query = parser.parse()
         results = evaluator.evaluate(query)
         # Should parse and execute without error
-        
+
         # Test with quoted values
-        parser = BIQLParser.from_string("SELECT ARRAY_AGG(filename WHERE suffix='bold') AS bold_files GROUP BY sub")
+        parser = BIQLParser.from_string(
+            "SELECT ARRAY_AGG(filename WHERE suffix='bold') AS bold_files GROUP BY sub"
+        )
         query = parser.parse()
         results = evaluator.evaluate(query)
         # Should parse and execute without error
-        
+
         # Test with numeric-like values
-        parser = BIQLParser.from_string("SELECT ARRAY_AGG(filename WHERE run='01') AS run01_files GROUP BY sub")
-        query = parser.parse()  
+        parser = BIQLParser.from_string(
+            "SELECT ARRAY_AGG(filename WHERE run='01') AS run01_files GROUP BY sub"
+        )
+        query = parser.parse()
         results = evaluator.evaluate(query)
         # Should parse and execute without error
 
     def test_array_agg_complex_conditions(self, evaluator):
         """Test complex WHERE conditions with AND/OR in ARRAY_AGG"""
         # Test AND condition - should only return .nii files that are phase
-        parser = BIQLParser.from_string("SELECT ARRAY_AGG(filename WHERE part='phase' AND extension='.nii') AS phase_nii_files, ARRAY_AGG(filename WHERE part='phase') AS all_phase_files GROUP BY sub")
+        parser = BIQLParser.from_string(
+            "SELECT ARRAY_AGG(filename WHERE part='phase' AND extension='.nii') AS phase_nii_files, ARRAY_AGG(filename WHERE part='phase') AS all_phase_files GROUP BY sub"
+        )
         query = parser.parse()
         results = evaluator.evaluate(query)
-        
+
         # Verify parsing works and doesn't crash
         assert isinstance(results, list)
-        
+
         # Check that the AND condition filters correctly
         for result in results:
             if "phase_nii_files" in result and "all_phase_files" in result:
                 phase_nii = result["phase_nii_files"]
                 all_phase = result["all_phase_files"]
-                
+
                 # phase_nii_files should be a subset of all_phase_files
                 if phase_nii and all_phase:
                     assert isinstance(phase_nii, list)
                     assert isinstance(all_phase, list)
                     # All files in phase_nii should end with .nii
                     for filename in phase_nii:
-                        assert filename.endswith('.nii'), f"Expected .nii file, got {filename}"
+                        assert filename.endswith(
+                            ".nii"
+                        ), f"Expected .nii file, got {filename}"
                     # phase_nii should have <= files than all_phase (since it's more restrictive)
                     assert len(phase_nii) <= len(all_phase)
-        
+
         # Test OR condition
-        parser = BIQLParser.from_string("SELECT ARRAY_AGG(filename WHERE part='mag' OR part='phase') AS mag_or_phase_files GROUP BY sub")
+        parser = BIQLParser.from_string(
+            "SELECT ARRAY_AGG(filename WHERE part='mag' OR part='phase') AS mag_or_phase_files GROUP BY sub"
+        )
         query = parser.parse()
         results = evaluator.evaluate(query)
-        
+
         assert isinstance(results, list)
-        
+
         # Test nested conditions with parentheses
-        parser = BIQLParser.from_string("SELECT ARRAY_AGG(filename WHERE (part='phase' AND extension='.nii') OR (part='mag' AND extension='.json')) AS mixed_files GROUP BY sub")
+        parser = BIQLParser.from_string(
+            "SELECT ARRAY_AGG(filename WHERE (part='phase' AND extension='.nii') OR (part='mag' AND extension='.json')) AS mixed_files GROUP BY sub"
+        )
         query = parser.parse()
         results = evaluator.evaluate(query)
-        
+
         assert isinstance(results, list)
 
     def test_array_agg_with_aliases(self, evaluator):
         """Test ARRAY_AGG with various alias configurations"""
         # Test single ARRAY_AGG with alias
-        parser = BIQLParser.from_string("SELECT ARRAY_AGG(filename WHERE part='mag') AS magnitude_files GROUP BY sub")
+        parser = BIQLParser.from_string(
+            "SELECT ARRAY_AGG(filename WHERE part='mag') AS magnitude_files GROUP BY sub"
+        )
         query = parser.parse()
         results = evaluator.evaluate(query)
-        
+
         if results:
             for result in results:
                 assert "magnitude_files" in result
                 assert "array_agg" not in result  # Should use alias, not default name
                 assert isinstance(result["magnitude_files"], list)
-        
+
         # Test multiple ARRAY_AGG with different aliases
         parser = BIQLParser.from_string(
             "SELECT sub, "
@@ -768,7 +793,7 @@ class TestBIQLEvaluator:
         )
         query = parser.parse()
         results = evaluator.evaluate(query)
-        
+
         if results:
             for result in results:
                 assert "sub" in result

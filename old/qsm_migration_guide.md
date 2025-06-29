@@ -6,7 +6,7 @@ This guide shows how to replace your custom BIDS parser with equivalent BIQL que
 
 Your original parser focused on these entities for QSM reconstruction groups:
 
-- **`part`**: `mag` (magnitude) or `phase` 
+- **`part`**: `mag` (magnitude) or `phase`
 - **`echo`**: Echo number for multi-echo sequences (1, 2, 3, ...)
 - **`acq`**: Acquisition parameters (`mygrea`, `mygreb`, etc.)
 - **`suffix`**: `T2starw` (single echo) or `MEGRE` (multi-echo)
@@ -34,7 +34,7 @@ part=mag OR part=phase
 **BIQL Query**:
 ```sql
 -- Group QSM files by reconstruction units
-SELECT sub, ses, acq, run, COUNT(*) 
+SELECT sub, ses, acq, run, COUNT(*)
 WHERE (part=mag OR part=phase) AND (suffix=T2starw OR suffix=MEGRE)
 GROUP BY sub, ses, acq, run
 ```
@@ -68,8 +68,8 @@ suffix=MEGRE AND (part=mag OR part=phase)
 SELECT echo, COUNT(*) WHERE suffix=MEGRE GROUP BY echo
 
 -- Get complete echo series for a subject
-SELECT sub, echo, part, filename 
-WHERE sub=2 AND suffix=MEGRE 
+SELECT sub, echo, part, filename
+WHERE sub=2 AND suffix=MEGRE
 ORDER BY echo, part
 ```
 
@@ -89,8 +89,8 @@ acq=mygrea OR acq=mygreb
 acq~=/myg.*/
 
 -- Complex: multi-echo with specific acquisition
-SELECT sub, acq, echo, part, filename 
-WHERE suffix=MEGRE AND acq~=/myg.*/ 
+SELECT sub, acq, echo, part, filename
+WHERE suffix=MEGRE AND acq~=/myg.*/
 ORDER BY sub, acq, echo, part
 ```
 
@@ -144,16 +144,16 @@ SELECT * WHERE relative_path~=/derivatives/
 **BIQL Queries for QC**:
 ```sql
 -- Check for incomplete groups (missing phase files)
-SELECT sub, ses, acq, run, part, COUNT(*) 
-WHERE suffix=T2starw 
+SELECT sub, ses, acq, run, part, COUNT(*)
+WHERE suffix=T2starw
 GROUP BY sub, ses, acq, run, part
 
 -- Find orphaned files (no matching mag/phase pair)
 part=mag AND NOT EXISTS (corresponding phase file)
 
 -- Verify echo counts match
-SELECT sub, ses, acq, run, echo, COUNT(*) 
-WHERE suffix=MEGRE 
+SELECT sub, ses, acq, run, echo, COUNT(*)
+WHERE suffix=MEGRE
 GROUP BY sub, ses, acq, run, echo
 ```
 
@@ -162,21 +162,21 @@ GROUP BY sub, ses, acq, run, echo
 **BIQL Queries for processing pipeline**:
 ```sql
 -- Get processing order by field strength
-SELECT sub, metadata.MagneticFieldStrength, COUNT(*) 
-WHERE part=mag 
-GROUP BY sub, metadata.MagneticFieldStrength 
+SELECT sub, metadata.MagneticFieldStrength, COUNT(*)
+WHERE part=mag
+GROUP BY sub, metadata.MagneticFieldStrength
 ORDER BY metadata.MagneticFieldStrength
 
 -- Find multi-run acquisitions needing combination
-SELECT sub, ses, acq, COUNT(*) 
-WHERE run~=/.*/ 
-GROUP BY sub, ses, acq 
+SELECT sub, ses, acq, COUNT(*)
+WHERE run~=/.*/
+GROUP BY sub, ses, acq
 HAVING COUNT(*) > 1
 
 -- Echo time analysis
-SELECT echo, metadata.EchoTime, COUNT(*) 
-WHERE suffix=MEGRE AND part=mag 
-GROUP BY echo, metadata.EchoTime 
+SELECT echo, metadata.EchoTime, COUNT(*)
+WHERE suffix=MEGRE AND part=mag
+GROUP BY echo, metadata.EchoTime
 ORDER BY metadata.EchoTime
 ```
 
@@ -205,7 +205,7 @@ from biql import BIDSDataset, BIQLEvaluator, BIQLParser
 def get_qsm_groups(bids_dir):
     dataset = BIDSDataset(bids_dir)
     evaluator = BIQLEvaluator(dataset)
-    
+
     # Get QSM reconstruction groups
     parser = BIQLParser.from_string(
         "SELECT sub, ses, acq, run, COUNT(*) "

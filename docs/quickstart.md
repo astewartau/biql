@@ -101,7 +101,7 @@ biql "SELECT DISTINCT task WHERE datatype=func"
 
 ### JSON (Default)
 ```bash
-biql "sub=01" 
+biql "sub=01"
 ```
 
 ### Table Format
@@ -171,7 +171,7 @@ biql "sub~=\"0[1-5]\""
 # Complex regex patterns for file discovery
 biql "filename~=\".*ses-[0-9]+.*task-rest.*\""
 
-# SQL-style LIKE patterns  
+# SQL-style LIKE patterns
 biql "task LIKE \"%back%\""
 ```
 

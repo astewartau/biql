@@ -53,7 +53,7 @@ Specify the output format. Available formats:
 - `json` (default) - JSON array of objects
 - `table` - Pretty-printed table
 - `csv` - Comma-separated values
-- `tsv` - Tab-separated values  
+- `tsv` - Tab-separated values
 - `paths` - File paths only (one per line)
 
 ```bash
@@ -79,7 +79,7 @@ Validate query syntax without executing. Useful for testing complex queries.
 biql --validate "SELECT sub, COUNT(*) GROUP BY sub"
 ```
 
-**Output**: 
+**Output**:
 - Success: `Query syntax is valid`
 - Error: Detailed syntax error with position
 
@@ -276,7 +276,7 @@ done
 ```bash
 # Build queries incrementally
 biql --validate "SELECT sub"
-biql --validate "SELECT sub WHERE datatype=func"  
+biql --validate "SELECT sub WHERE datatype=func"
 biql --validate "SELECT sub WHERE datatype=func GROUP BY sub"
 biql "SELECT sub WHERE datatype=func GROUP BY sub" --format table
 ```
@@ -309,7 +309,7 @@ Error: Cannot write to '/root/file.csv': Permission denied
 
 - `0` - Success
 - `1` - Query syntax error
-- `2` - Dataset loading error  
+- `2` - Dataset loading error
 - `3` - Output file error
 - `4` - Invalid command line arguments
 
@@ -360,7 +360,7 @@ alias bstats='biql --show-stats ""'
    ```bash
    # Good: Filter by subject first
    biql "sub=01 AND datatype=func"
-   
+
    # Less efficient: Complex conditions first
    biql "metadata.RepetitionTime>2.0 AND sub=01"
    ```
@@ -369,7 +369,7 @@ alias bstats='biql --show-stats ""'
    ```bash
    # Good: Select only needed fields
    biql "SELECT sub, filepath WHERE datatype=func"
-   
+
    # Wasteful: Select everything
    biql "SELECT * WHERE datatype=func"
    ```
@@ -378,7 +378,7 @@ alias bstats='biql --show-stats ""'
    ```bash
    # Fast: Get unique values
    biql "SELECT DISTINCT task"
-   
+
    # Slower: Group and count
    biql "SELECT task, COUNT(*) GROUP BY task"
    ```

@@ -22,8 +22,8 @@ BIDS Query Language (BIQL) is a domain-specific query language designed for the 
 
 ```sql
 -- Find all functional scans from specific subjects
-SELECT sub, ses, task, run, filepath 
-WHERE datatype=func AND sub IN [01, 02, 03] 
+SELECT sub, ses, task, run, filepath
+WHERE datatype=func AND sub IN [01, 02, 03]
 ORDER BY sub, run
 
 -- Get QSM reconstruction groups with file lists
@@ -90,4 +90,3 @@ Ready to start querying your BIDS data? Choose your path:
 ## License
 
 BIQL is open source software released under the [MIT License](https://opensource.org/licenses/MIT).
-

@@ -15,19 +15,19 @@ Real-world BIQL query patterns and cookbook recipes for common neuroimaging work
 
 ```sql
 -- Get basic dataset statistics
-SELECT datatype, COUNT(*) 
+SELECT datatype, COUNT(*)
 GROUP BY datatype
 ```
 
 ```sql
 -- See all available subjects and sessions
-SELECT DISTINCT sub, ses 
+SELECT DISTINCT sub, ses
 ORDER BY sub, ses
 ```
 
 ```sql
 -- Find all unique tasks
-SELECT DISTINCT task 
+SELECT DISTINCT task
 WHERE datatype=func
 ```
 
@@ -35,12 +35,12 @@ WHERE datatype=func
 
 ```sql
 -- What acquisitions are available?
-SELECT DISTINCT acq 
+SELECT DISTINCT acq
 WHERE acq
 
 -- What echo times are used?
-SELECT DISTINCT metadata.EchoTime 
-WHERE metadata.EchoTime 
+SELECT DISTINCT metadata.EchoTime
+WHERE metadata.EchoTime
 ORDER BY metadata.EchoTime
 ```
 
@@ -48,8 +48,8 @@ ORDER BY metadata.EchoTime
 
 ```sql
 -- Files per subject
-SELECT sub, COUNT(*) as total_files 
-GROUP BY sub 
+SELECT sub, COUNT(*) as total_files
+GROUP BY sub
 ORDER BY total_files DESC
 ```
 
@@ -67,14 +67,14 @@ ORDER BY sub, ses, task
 
 ```sql
 -- All T1w anatomical scans
-SELECT sub, ses, filepath 
+SELECT sub, ses, filepath
 WHERE suffix=T1w
 ORDER BY sub, ses
 ```
 
 ```sql
 -- Functional scans for specific task
-SELECT sub, ses, run, filepath 
+SELECT sub, ses, run, filepath
 WHERE datatype=func AND task=nback
 ORDER BY sub, ses, run
 ```
@@ -83,7 +83,7 @@ ORDER BY sub, ses, run
 
 ```sql
 -- Find all BOLD variants
-SELECT suffix, COUNT(*) 
+SELECT suffix, COUNT(*)
 WHERE suffix=*bold*
 GROUP BY suffix
 ```
@@ -116,7 +116,7 @@ ORDER BY metadata.RepetitionTime
 
 ```sql
 -- Subjects missing resting-state data
-SELECT DISTINCT sub 
+SELECT DISTINCT sub
 WHERE sub NOT IN (
   SELECT DISTINCT sub WHERE task=rest
 )
@@ -136,7 +136,7 @@ HAVING COUNT(DISTINCT task) < 3
 -- Unusually short/long scans
 SELECT sub, ses, task, run, metadata.RepetitionTime, filepath
 WHERE datatype=func AND (
-  metadata.RepetitionTime < 1.0 OR 
+  metadata.RepetitionTime < 1.0 OR
   metadata.RepetitionTime > 4.0
 )
 ```
@@ -144,7 +144,7 @@ WHERE datatype=func AND (
 ```sql
 -- Files with unusual sizes (proxy check)
 SELECT sub, filepath, filename
-WHERE filename=*_bold.nii* AND 
+WHERE filename=*_bold.nii* AND
       filepath~=".*([5-9][0-9]{7,}|[1-9][0-9]{8,}).*"
 ```
 
@@ -172,11 +172,11 @@ HAVING COUNT(DISTINCT metadata.RepetitionTime) > 1
 
 ```sql
 -- Generate T1w-BOLD pairs for registration
-SELECT 
+SELECT
   sub, ses,
   t1.filepath as t1w_file,
   bold.filepath as bold_file
-FROM 
+FROM
   (SELECT sub, ses, filepath WHERE suffix=T1w) t1,
   (SELECT sub, ses, filepath WHERE datatype=func) bold
 WHERE t1.sub = bold.sub AND t1.ses = bold.ses
@@ -200,7 +200,7 @@ GROUP BY participants.group
 
 ```sql
 -- Age-matched cohorts
-SELECT 
+SELECT
   participants.group,
   AVG(participants.age) as mean_age,
   COUNT(*) as n_subjects
@@ -233,7 +233,7 @@ ORDER BY ses
 
 ```sql
 -- Scanner-specific analysis
-SELECT 
+SELECT
   metadata.Manufacturer,
   metadata.MagneticFieldStrength,
   COUNT(*) as scans
@@ -243,8 +243,8 @@ GROUP BY metadata.Manufacturer, metadata.MagneticFieldStrength
 
 ```sql
 -- Acquisition time analysis
-SELECT 
-  sub, 
+SELECT
+  sub,
   metadata.AcquisitionTime,
   COUNT(*) as scans
 WHERE metadata.AcquisitionTime
@@ -256,7 +256,7 @@ ORDER BY metadata.AcquisitionTime
 
 ```sql
 -- Average scan parameters by site
-SELECT 
+SELECT
   participants.site,
   AVG(metadata.RepetitionTime) as mean_tr,
   AVG(metadata.EchoTime) as mean_te,
@@ -268,7 +268,7 @@ ORDER BY participants.site
 
 ```sql
 -- Task duration estimates
-SELECT 
+SELECT
   task,
   AVG(metadata.RepetitionTime * metadata.NumberOfVolumes) as duration_sec,
   COUNT(*) as n_runs
@@ -283,7 +283,7 @@ ORDER BY duration_sec DESC
 
 ```sql
 -- QSM reconstruction groups with filename arrays
-SELECT 
+SELECT
   sub, ses, acq, run,
   filename,
   COUNT(*) as files_in_group
@@ -300,7 +300,7 @@ ORDER BY sub, ses, acq, run
 [
   {
     "sub": "01",
-    "ses": "1", 
+    "ses": "1",
     "acq": "GRE",
     "filename": [
       "sub-01_ses-1_acq-GRE_part-mag_echo-1_MEGRE.nii",
@@ -315,7 +315,7 @@ ORDER BY sub, ses, acq, run
 
 ```sql
 -- Multi-echo parameter validation
-SELECT 
+SELECT
   sub, ses, echo, part,
   metadata.EchoTime,
   filename
@@ -325,7 +325,7 @@ ORDER BY sub, ses, echo, part
 
 ```sql
 -- Find complete magnitude/phase pairs
-SELECT 
+SELECT
   sub, ses, echo,
   COUNT(DISTINCT part) as parts,
   filename
@@ -346,7 +346,7 @@ ORDER BY metadata.EchoTime
 
 ```sql
 -- DWI sequences with b-values
-SELECT 
+SELECT
   sub, ses, run,
   metadata.BValue,
   filepath
@@ -356,7 +356,7 @@ ORDER BY sub, ses, metadata.BValue, run
 
 ```sql
 -- Multi-shell DWI validation
-SELECT 
+SELECT
   sub, ses,
   COUNT(DISTINCT metadata.BValue) as shells,
   metadata.BValue
@@ -370,7 +370,7 @@ ORDER BY shells DESC
 
 ```sql
 -- ASL control/label pairs
-SELECT 
+SELECT
   sub, ses, asl,
   COUNT(*) as volumes,
   filepath
@@ -383,7 +383,7 @@ ORDER BY sub, ses
 
 ```sql
 -- Long resting-state sessions
-SELECT 
+SELECT
   sub, ses, run,
   metadata.RepetitionTime * metadata.NumberOfVolumes as duration_sec,
   filepath
@@ -416,7 +416,7 @@ WHERE datatype=func AND task IN [rest, nback]
 ```sql
 -- fMRIPrep input validation
 SELECT sub, COUNT(DISTINCT suffix) as modalities
-WHERE suffix IN [T1w, bold] 
+WHERE suffix IN [T1w, bold]
 GROUP BY sub
 HAVING COUNT(DISTINCT suffix) = 2
 ```
@@ -429,7 +429,7 @@ import json
 
 # Get functional files via BIQL
 result = subprocess.run([
-    'biql', 
+    'biql',
     'SELECT sub, ses, task, run, filepath WHERE datatype=func',
     '--format', 'json'
 ], capture_output=True, text=True)
@@ -463,11 +463,11 @@ SELECT filepath WHERE metadata.RepetitionTime>2.0 AND task=rest
 
 ```sql
 -- Batch processing by subject
-SELECT sub, filepath 
+SELECT sub, filepath
 WHERE sub=01 AND datatype=func
 
 -- Instead of processing all subjects at once
-SELECT sub, filepath 
+SELECT sub, filepath
 WHERE datatype=func
 ```
 
@@ -494,7 +494,7 @@ SELECT COUNT(*) as with_metadata
 WHERE metadata.RepetitionTime
 
 -- Verify participants data
-SELECT COUNT(*) as with_demographics  
+SELECT COUNT(*) as with_demographics
 WHERE participants.age
 ```
 
@@ -541,7 +541,7 @@ GROUP BY sub, ses
 ORDER BY files
 
 -- 2. Missing anatomical scans
-SELECT sub 
+SELECT sub
 WHERE sub NOT IN (SELECT DISTINCT sub WHERE suffix=T1w)
 
 -- 3. Inconsistent task parameters

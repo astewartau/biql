@@ -62,7 +62,7 @@ participants.age>18 AND participants.sex="F"
 SELECT sub, COUNT(*) GROUP BY sub HAVING COUNT(*)>10
 
 -- Complex queries
-SELECT sub, ses, task, filepath 
+SELECT sub, ses, task, filepath
 WHERE (datatype=func OR datatype=anat) AND sub=[01:05]
 ORDER BY sub, task DESC
 ```

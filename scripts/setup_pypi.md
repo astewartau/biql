@@ -67,7 +67,7 @@ repository: "astewartau/biql"
    ```bash
    # Update version and create tag
    python scripts/release.py 0.2.0
-   
+
    # Push to GitHub
    git push && git push --tags
    ```
@@ -151,7 +151,7 @@ pip install --index-url https://test.pypi.org/simple/ biql
 Check these workflows for issues:
 
 - **Tests**: Runs on every push/PR
-- **Lint**: Code quality checks  
+- **Lint**: Code quality checks
 - **Publish**: Only runs on releases
 - **Docs**: Builds documentation
 

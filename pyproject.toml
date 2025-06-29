@@ -38,6 +38,7 @@ dev = [
     "black",
     "isort",
     "flake8",
+    "pre-commit",
 ]
 test = [
     "pytest>=6.0",

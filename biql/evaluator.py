@@ -337,28 +337,38 @@ class BIQLEvaluator:
         try:
             # Import here to avoid circular imports
             from .parser import BIQLParser
-            
+
             # Parse the condition string as an expression
             parser = BIQLParser.from_string(f"WHERE {condition_str}")
             query = parser.parse()
-            
+
             if query.where_clause:
                 # Evaluate the expression against the item dictionary
-                return self._evaluate_expression_dict(item, query.where_clause.condition)
+                return self._evaluate_expression_dict(
+                    item, query.where_clause.condition
+                )
             else:
                 return False
-                
+
         except Exception as e:
             # Fall back to simple condition parsing for backwards compatibility
             try:
-                if "=" in condition_str and " AND " not in condition_str and " OR " not in condition_str:
+                if (
+                    "=" in condition_str
+                    and " AND " not in condition_str
+                    and " OR " not in condition_str
+                ):
                     parts = condition_str.split("=", 1)
                     field = parts[0].strip()
                     value = parts[1].strip().strip("'\"")  # Remove quotes
 
                     item_value = self._get_nested_value(item, field)
                     return str(item_value) == value if item_value is not None else False
-                elif "!=" in condition_str and " AND " not in condition_str and " OR " not in condition_str:
+                elif (
+                    "!=" in condition_str
+                    and " AND " not in condition_str
+                    and " OR " not in condition_str
+                ):
                     parts = condition_str.split("!=", 1)
                     field = parts[0].strip()
                     value = parts[1].strip().strip("'\"")  # Remove quotes
@@ -408,7 +418,7 @@ class BIQLEvaluator:
             if expr.path:
                 # Metadata or participants access
                 if expr.field == "metadata" and expr.path:
-                    value = item.get('metadata', {})
+                    value = item.get("metadata", {})
                     for part in expr.path:
                         if isinstance(value, dict) and part in value:
                             value = value[part]
@@ -416,7 +426,7 @@ class BIQLEvaluator:
                             return None
                     return value
                 elif expr.field == "participants" and expr.path:
-                    value = item.get('participants', {})
+                    value = item.get("participants", {})
                     for part in expr.path:
                         if isinstance(value, dict) and part in value:
                             value = value[part]
@@ -485,11 +495,11 @@ class BIQLEvaluator:
         value = self._get_nested_value(result, field)
         if value is None:
             return ""
-        
+
         # For arrays (from GROUP BY auto-aggregation), use the first element for sorting
         if isinstance(value, list) and value:
             return value[0]
-        
+
         return value
 
     def _get_nested_value(self, result: Dict, field: str) -> Any:

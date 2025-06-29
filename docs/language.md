@@ -118,7 +118,7 @@ sub=01
 task=rest
 datatype=func
 
--- Inequality  
+-- Inequality
 run!=1
 metadata.RepetitionTime>2.0
 participants.age<30
@@ -204,7 +204,7 @@ SELECT sub, COUNT(*) GROUP BY sub
 ### Multiple Fields
 
 ```sql
-SELECT sub, ses, task, COUNT(*) 
+SELECT sub, ses, task, COUNT(*)
 GROUP BY sub, ses, task
 ```
 
@@ -220,7 +220,7 @@ SELECT sub, filename, COUNT(*) GROUP BY sub
 ```json
 [
   {
-    "sub": "01", 
+    "sub": "01",
     "filename": ["file1.nii", "file2.nii"],
     "count": 2
   }
@@ -248,7 +248,7 @@ GROUP BY sub, ses, acq
 [
   {
     "sub": "01",
-    "ses": "1", 
+    "ses": "1",
     "acq": "GRE",
     "filename": [
       "sub-01_ses-1_acq-GRE_part-mag_MEGRE.nii",
@@ -265,13 +265,13 @@ HAVING filters grouped results based on aggregate conditions.
 
 ```sql
 -- Subjects with more than 10 files
-SELECT sub, COUNT(*) 
-GROUP BY sub 
+SELECT sub, COUNT(*)
+GROUP BY sub
 HAVING COUNT(*) > 10
 
 -- Tasks with sufficient data
-SELECT task, COUNT(*) 
-GROUP BY task 
+SELECT task, COUNT(*)
+GROUP BY task
 HAVING COUNT(*) >= 20
 ```
 
@@ -299,8 +299,8 @@ ORDER BY sub ASC, ses DESC, run ASC
 ### Sorting with Aggregation
 
 ```sql
-SELECT task, COUNT(*) 
-GROUP BY task 
+SELECT task, COUNT(*)
+GROUP BY task
 ORDER BY COUNT(*) DESC    -- Most common tasks first
 ```
 
@@ -373,7 +373,7 @@ BIQL automatically detects and converts data types:
 -- String comparison
 sub="01"
 
--- Numeric comparison  
+-- Numeric comparison
 run=1
 metadata.RepetitionTime=2.0
 
@@ -395,7 +395,7 @@ BIQL provides direct access to all BIDS entities:
 
 ```sql
 sub              -- Subject ID
-ses              -- Session ID  
+ses              -- Session ID
 task             -- Task name
 run              -- Run number
 acq              -- Acquisition parameters
@@ -417,7 +417,7 @@ mt               -- Magnetization transfer
 part             -- Part (mag, phase, real, imag)
 recording        -- Recording type
 
--- DWI  
+-- DWI
 dir              -- Diffusion direction
 dwi              -- DWI identifier
 
@@ -442,7 +442,7 @@ model            -- Statistical model
 
 ```sql
 datatype         -- BIDS datatype (anat, func, dwi, etc.)
-suffix           -- File suffix (T1w, bold, dwi, etc.)  
+suffix           -- File suffix (T1w, bold, dwi, etc.)
 extension        -- File extension (.nii, .json, .tsv)
 filename         -- Complete filename
 filepath         -- Full file path
@@ -457,7 +457,7 @@ Access JSON metadata using dot notation:
 
 ```sql
 metadata.RepetitionTime
-metadata.EchoTime  
+metadata.EchoTime
 metadata.FlipAngle
 metadata.MagneticFieldStrength
 ```
@@ -480,7 +480,7 @@ WHERE metadata.EchoTime<0.05
 WHERE metadata.MagneticFieldStrength=3.0
 
 -- Group by acquisition parameters
-SELECT metadata.RepetitionTime, COUNT(*) 
+SELECT metadata.RepetitionTime, COUNT(*)
 GROUP BY metadata.RepetitionTime
 ```
 
@@ -499,7 +499,7 @@ Access participant information from `participants.tsv`:
 
 ```sql
 participants.age
-participants.sex  
+participants.sex
 participants.group
 participants.handedness
 ```
@@ -513,7 +513,7 @@ WHERE participants.sex="F"
 WHERE participants.group="control"
 
 -- Group by participant characteristics
-SELECT participants.group, COUNT(*) 
+SELECT participants.group, COUNT(*)
 GROUP BY participants.group
 ```
 
@@ -544,13 +544,13 @@ SELECT DISTINCT task WHERE datatype=func
 
 ```sql
 -- Check data completeness
-SELECT sub, COUNT(*) as total_files 
-GROUP BY sub 
+SELECT sub, COUNT(*) as total_files
+GROUP BY sub
 ORDER BY total_files
 
 -- Find missing sessions
-SELECT sub, ses, COUNT(*) 
-GROUP BY sub, ses 
+SELECT sub, ses, COUNT(*)
+GROUP BY sub, ses
 HAVING COUNT(*) < 10
 ```
 
@@ -561,7 +561,7 @@ HAVING COUNT(*) < 10
 SELECT sub, ses, filepath WHERE suffix=T1w
 
 -- Functional runs for specific task
-SELECT sub, ses, run, filepath 
+SELECT sub, ses, run, filepath
 WHERE datatype=func AND task=nback
 ORDER BY sub, ses, run
 ```
@@ -570,8 +570,8 @@ ORDER BY sub, ses, run
 
 ```sql
 -- QSM reconstruction groups
-SELECT sub, ses, acq, filename, COUNT(*) 
-WHERE (part=mag OR part=phase) AND suffix=MEGRE 
+SELECT sub, ses, acq, filename, COUNT(*)
+WHERE (part=mag OR part=phase) AND suffix=MEGRE
 GROUP BY sub, ses, acq
 
 -- Separate magnitude and phase files for QSM
@@ -582,8 +582,8 @@ WHERE (part='mag' OR part='phase') AND suffix=MEGRE
 GROUP BY sub, ses, acq, run
 
 -- Multi-echo parameters
-SELECT DISTINCT echo, metadata.EchoTime 
-WHERE suffix=MEGRE 
+SELECT DISTINCT echo, metadata.EchoTime
+WHERE suffix=MEGRE
 ORDER BY metadata.EchoTime
 ```
 
@@ -602,7 +602,7 @@ BIQL gracefully handles common issues without crashing:
 ### Graceful Failure Modes
 
 - **Missing fields** → Return null or exclude from results
-- **Type mismatches** → Fall back to string comparison  
+- **Type mismatches** → Fall back to string comparison
 - **Invalid regex** → Skip pattern matching, continue query
 - **Missing metadata** → Return null values
 - **Malformed queries** → Clear error messages with position
