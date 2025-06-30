@@ -171,15 +171,17 @@ HAVING COUNT(DISTINCT metadata.RepetitionTime) > 1
 ### fMRI Preprocessing
 
 ```sql
--- Generate T1w-BOLD pairs for registration
-SELECT
-  sub, ses,
-  t1.filepath as t1w_file,
-  bold.filepath as bold_file
-FROM
-  (SELECT sub, ses, filepath WHERE suffix=T1w) t1,
-  (SELECT sub, ses, filepath WHERE datatype=func) bold
-WHERE t1.sub = bold.sub AND t1.ses = bold.ses
+-- Find T1w anatomical scans for registration
+SELECT sub, ses, filepath as t1w_file
+WHERE suffix=T1w
+ORDER BY sub, ses
+```
+
+```sql
+-- Find functional scans for registration
+SELECT sub, ses, filepath as bold_file
+WHERE datatype=func
+ORDER BY sub, ses
 ```
 
 ```sql

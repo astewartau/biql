@@ -304,6 +304,7 @@ class BIQLParser:
                 TokenType.STAR,
                 TokenType.IDENTIFIER,
                 TokenType.QUESTION,
+                TokenType.SLASH,
             ]:
                 token = self._consume(self._current_token_type())
                 pattern += token.value
@@ -313,7 +314,17 @@ class BIQLParser:
         parts = [first_part]
         while self._current_token_type() == TokenType.DOT:
             self._consume(TokenType.DOT)
-            parts.append(self._consume(TokenType.IDENTIFIER).value)
+            # Allow certain keywords as field names after dot notation
+            if self._current_token_type() in [
+                TokenType.IDENTIFIER,
+                TokenType.GROUP,
+                TokenType.ORDER,
+                TokenType.BY,
+            ]:
+                parts.append(self._current_token().value)
+                self.position += 1
+            else:
+                parts.append(self._consume(TokenType.IDENTIFIER).value)
 
         # Return field access
         if len(parts) > 1:
@@ -411,6 +422,7 @@ class BIQLParser:
             TokenType.STAR,
             TokenType.IDENTIFIER,
             TokenType.QUESTION,
+            TokenType.SLASH,
         ]:
             token = self._consume(self._current_token_type())
             pattern += token.value
@@ -423,7 +435,17 @@ class BIQLParser:
 
         while self._current_token_type() == TokenType.DOT:
             self._consume(TokenType.DOT)
-            parts.append(self._consume(TokenType.IDENTIFIER).value)
+            # Allow certain keywords as field names after dot notation
+            if self._current_token_type() in [
+                TokenType.IDENTIFIER,
+                TokenType.GROUP,
+                TokenType.ORDER,
+                TokenType.BY,
+            ]:
+                parts.append(self._current_token().value)
+                self.position += 1
+            else:
+                parts.append(self._consume(TokenType.IDENTIFIER).value)
 
         return ".".join(parts)
 

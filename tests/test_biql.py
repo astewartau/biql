@@ -1362,6 +1362,175 @@ class TestBIQLEvaluator:
             if task is not None:
                 assert "back" in task
 
+    @pytest.fixture
+    def reserved_keyword_dataset(self):
+        """Create a test dataset with reserved keywords in participants.tsv"""
+        tmpdir = Path(tempfile.mkdtemp())
+
+        # Dataset description
+        (tmpdir / "dataset_description.json").write_text(
+            json.dumps({"Name": "ReservedKeywordTest", "BIDSVersion": "1.8.0"})
+        )
+
+        # Participants file with 'group' field (reserved keyword)
+        (tmpdir / "participants.tsv").write_text(
+            "participant_id\tage\tsex\tgroup\tsite\n"
+            "sub-01\t25\tF\tcontrol\tSiteA\n"
+            "sub-02\t28\tM\tpatient\tSiteA\n"
+            "sub-03\t22\tF\tcontrol\tSiteB\n"
+        )
+
+        # Create test files with specific naming for type coercion tests
+        files = [
+            ("sub-01/anat/sub-01_T1w.nii.gz", {}),
+            ("sub-01/func/sub-01_task-rest_bold.nii.gz", {"RepetitionTime": 2.0}),
+            ("sub-02/anat/sub-02_T1w.nii.gz", {}),
+            ("sub-02/func/sub-02_task-rest_bold.nii.gz", {"RepetitionTime": 2.0}),
+            ("sub-03/func/sub-03_task-rest_bold.nii.gz", {"RepetitionTime": 2.0}),
+        ]
+
+        for file_path, metadata in files:
+            full_path = tmpdir / file_path
+            full_path.parent.mkdir(parents=True, exist_ok=True)
+            full_path.touch()
+
+            # Create JSON metadata if provided
+            if metadata:
+                json_path = full_path.with_suffix(".json")
+                json_path.write_text(json.dumps(metadata))
+
+        return BIDSDataset(tmpdir)
+
+    @pytest.fixture
+    def reserved_keyword_evaluator(self, reserved_keyword_dataset):
+        """Evaluator for reserved keyword dataset"""
+        return BIQLEvaluator(reserved_keyword_dataset)
+
+    def test_reserved_keyword_participants_group_parsing(
+        self, reserved_keyword_evaluator
+    ):
+        """Test that participants.group parses correctly despite 'group' being a reserved keyword"""
+        # Test basic SELECT with reserved keyword
+        parser = BIQLParser.from_string("SELECT participants.group")
+        query = parser.parse()
+        results = reserved_keyword_evaluator.evaluate(query)
+
+        assert len(results) > 0
+        for result in results:
+            group_value = result.get(
+                "participants.GROUP"
+            )  # Note: uppercase due to keyword conversion
+            assert group_value in ["control", "patient"]
+
+    def test_reserved_keyword_participants_group_filtering(
+        self, reserved_keyword_evaluator
+    ):
+        """Test filtering by participants.group field"""
+        # Test WHERE clause with reserved keyword
+        parser = BIQLParser.from_string(
+            "SELECT sub, participants.group WHERE participants.group=control"
+        )
+        query = parser.parse()
+        results = reserved_keyword_evaluator.evaluate(query)
+
+        assert len(results) > 0
+        for result in results:
+            group_value = result.get("participants.GROUP")
+            assert group_value == "control"
+            assert result.get("sub") in ["01", "03"]  # Only subjects with control group
+
+    def test_in_operator_numeric_string_coercion(self, reserved_keyword_evaluator):
+        """Test IN operator with numbers that should match zero-padded string subjects"""
+        # Test basic number to zero-padded string conversion
+        parser = BIQLParser.from_string("sub IN [1, 2, 3]")
+        query = parser.parse()
+        results = reserved_keyword_evaluator.evaluate(query)
+
+        assert len(results) > 0
+        subjects_found = set(result.get("sub") for result in results)
+        assert subjects_found.issubset({"01", "02", "03"})
+
+    def test_in_operator_mixed_numeric_formats(self, reserved_keyword_evaluator):
+        """Test IN operator with mixed numeric formats"""
+        # Test both padded and unpadded numbers
+        parser = BIQLParser.from_string("sub IN [01, 2, 03]")
+        query = parser.parse()
+        results = reserved_keyword_evaluator.evaluate(query)
+
+        assert len(results) > 0
+        subjects_found = set(result.get("sub") for result in results)
+        assert subjects_found.issubset({"01", "02", "03"})
+
+    def test_combined_fixes_reserved_keyword_and_type_coercion(
+        self, reserved_keyword_evaluator
+    ):
+        """Test both fixes working together: reserved keyword and IN operator coercion"""
+        # Test complex query using both fixes
+        parser = BIQLParser.from_string(
+            "SELECT participants.group WHERE sub IN [1, 3] AND participants.group=control"
+        )
+        query = parser.parse()
+        results = reserved_keyword_evaluator.evaluate(query)
+
+        assert len(results) > 0
+        for result in results:
+            group_value = result.get("participants.GROUP")
+            assert group_value == "control"
+
+        # Verify we only got subjects 01 and 03 (which are control group)
+        # Get the source subjects by looking at the files
+        subjects_in_results = set()
+        for result in results:
+            # Get subject from filename or entities
+            if "sub" in result:
+                subjects_in_results.add(result["sub"])
+
+        # Both sub-01 and sub-03 should be found since they're in the IN list and are control group
+        assert subjects_in_results.issubset({"01", "03"})
+
+    def test_computed_field_wildcard_patterns(self, reserved_keyword_evaluator):
+        """Test wildcard patterns with computed fields like filename, filepath"""
+        # Test filename wildcard matching
+        parser = BIQLParser.from_string("SELECT filename WHERE filename=*bold*")
+        query = parser.parse()
+        results = reserved_keyword_evaluator.evaluate(query)
+
+        assert len(results) > 0
+        for result in results:
+            filename = result.get("filename")
+            assert filename is not None
+            assert "bold" in filename
+
+        # Test T1w pattern
+        parser = BIQLParser.from_string("SELECT filename WHERE filename=*T1w*")
+        query = parser.parse()
+        results = reserved_keyword_evaluator.evaluate(query)
+
+        assert len(results) > 0
+        for result in results:
+            filename = result.get("filename")
+            assert filename is not None
+            assert "T1w" in filename
+
+        # Test filepath pattern - should only return func files
+        parser = BIQLParser.from_string("SELECT filepath WHERE filepath=*/func/*")
+        query = parser.parse()
+        results = reserved_keyword_evaluator.evaluate(query)
+
+        # Should only return functional files (not anat files)
+        assert len(results) > 0
+        func_count = 0
+        for result in results:
+            filepath = result.get("filepath")
+            assert filepath is not None
+            if "/func/" in filepath:
+                func_count += 1
+
+        # All results should be func files
+        assert func_count == len(
+            results
+        ), f"Expected all {len(results)} results to be func files, but only {func_count} were"
+
     def test_regex_match_operator(self, evaluator):
         """Test regex MATCH operator (~=)"""
         parser = BIQLParser.from_string('sub~="0[1-3]"')

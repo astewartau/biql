@@ -144,15 +144,31 @@ class BIQLEvaluator:
                     ):
                         value = self.dataset.participants[file.entities["sub"]]
                         for part in expr.path:
-                            if isinstance(value, dict) and part in value:
-                                value = value[part]
+                            if isinstance(value, dict):
+                                # Debug: print what we're looking for vs what's available
+                                # print(f"DEBUG: Looking for '{part}' in {list(value.keys())}")
+                                # Try exact case first, then lowercase for keywords that got uppercased
+                                if part in value:
+                                    value = value[part]
+                                elif part.lower() in value:
+                                    value = value[part.lower()]
+                                else:
+                                    return None
                             else:
                                 return None
                         return value
                     return None
             else:
-                # Entity access - return the value from file entities
-                return file.entities.get(expr.field)
+                # Handle computed fields first
+                if expr.field == "filename":
+                    return file.filepath.name
+                elif expr.field == "filepath":
+                    return str(file.filepath)
+                elif expr.field == "relative_path":
+                    return str(file.relative_path)
+                else:
+                    # Entity access - return the value from file entities
+                    return file.entities.get(expr.field)
 
         elif isinstance(expr, Literal):
             return expr.value
@@ -188,7 +204,35 @@ class BIQLEvaluator:
 
         # Handle IN operator with lists
         if operator == TokenType.IN and isinstance(right, list):
-            return str(left) in [str(item) for item in right]
+            left_str = str(left)
+
+            # Enhanced type coercion for IN operator
+            for item in right:
+                item_str = str(item)
+
+                # Direct string match
+                if left_str == item_str:
+                    return True
+
+                # Try zero-padded number comparison for subject IDs
+                # Convert numbers to zero-padded strings (e.g., 1 -> "01", 2 -> "02")
+                if isinstance(item, (int, float)) and item == int(item):
+                    padded_item = f"{int(item):02d}"
+                    if left_str == padded_item:
+                        return True
+
+                # Try reverse: if left is a number and item is a string
+                try:
+                    if isinstance(item, str) and left_str.isdigit():
+                        if int(left_str) == int(item):
+                            return True
+                        # Also try zero-padded comparison
+                        if f"{int(left_str):02d}" == item:
+                            return True
+                except ValueError:
+                    pass
+
+            return False
 
         # Convert types if needed for numeric comparison
         if isinstance(right, (int, float)) and isinstance(left, str):
@@ -428,8 +472,14 @@ class BIQLEvaluator:
                 elif expr.field == "participants" and expr.path:
                     value = item.get("participants", {})
                     for part in expr.path:
-                        if isinstance(value, dict) and part in value:
-                            value = value[part]
+                        if isinstance(value, dict):
+                            # Try exact case first, then lowercase for keywords that got uppercased
+                            if part in value:
+                                value = value[part]
+                            elif part.lower() in value:
+                                value = value[part.lower()]
+                            else:
+                                return None
                         else:
                             return None
                     return value
@@ -507,8 +557,14 @@ class BIQLEvaluator:
         parts = field.split(".")
         value = result
         for part in parts:
-            if isinstance(value, dict) and part in value:
-                value = value[part]
+            if isinstance(value, dict):
+                # Try exact case first, then lowercase for keywords that got uppercased
+                if part in value:
+                    value = value[part]
+                elif part.lower() in value:
+                    value = value[part.lower()]
+                else:
+                    return None
             else:
                 return None
         return value

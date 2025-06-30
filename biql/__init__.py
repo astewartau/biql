@@ -11,5 +11,15 @@ from .dataset import BIDSDataset
 from .evaluator import BIQLEvaluator
 from .formatter import BIQLFormatter
 from .parser import BIQLParser
+from .query import BIQLQuery, create_query_engine
+from .utils import create_example_dataset
 
-__all__ = ["BIQLParser", "BIQLEvaluator", "BIDSDataset", "BIQLFormatter"]
+__all__ = [
+    "BIQLParser",
+    "BIQLEvaluator",
+    "BIDSDataset",
+    "BIQLFormatter",
+    "BIQLQuery",
+    "create_query_engine",
+    "create_example_dataset",
+]
