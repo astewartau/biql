@@ -49,6 +49,11 @@ jobs:
           cd docs
           jupyter nbconvert --to markdown guide.ipynb --output guide.md
 
+      - name: Clean up dataframe styling
+        run: |
+          cd docs
+          python3 ../.github/scripts/clean_tables.py
+
       - name: Add Jekyll front matter and navigation
         run: |
           cd docs
