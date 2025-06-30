@@ -66,8 +66,12 @@ jobs:
 
           # BIQL Tutorial
 
+          [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/astewartau/biql/blob/main/docs/guide.ipynb)
+
           This tutorial demonstrates how to use the BIDS Query Language (BIQL) to query neuroimaging datasets.
           The examples below are automatically executed and updated whenever the documentation is built.
+
+          **Want to run this interactively?** Click the "Open in Colab" button above to run and modify the code yourself!
 
           EOF
 
