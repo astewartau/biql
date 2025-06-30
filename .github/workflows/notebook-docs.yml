@@ -9,6 +9,9 @@ on:
     paths: [ "docs/guide.ipynb" ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   execute-notebook:
     runs-on: ubuntu-latest
