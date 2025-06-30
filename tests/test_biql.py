@@ -1579,6 +1579,83 @@ class TestBIQLEvaluator:
         # Should not crash, may return empty results
         assert isinstance(results, list)
 
+    def test_count_distinct_functionality(self):
+        """Test COUNT(DISTINCT field) functionality"""
+        # Create test data with duplicate values
+        test_files = [
+            {"sub": "01", "task": "rest", "run": "1", "datatype": "func"},
+            {"sub": "01", "task": "rest", "run": "2", "datatype": "func"},
+            {"sub": "01", "task": "nback", "run": "1", "datatype": "func"},
+            {"sub": "02", "task": "rest", "run": "1", "datatype": "func"},
+            {"sub": "02", "task": "rest", "run": "2", "datatype": "func"},
+        ]
+
+        class MockDataset:
+            def __init__(self):
+                self.files = []
+                for file_data in test_files:
+                    mock_file = type("MockFile", (), {})()
+                    mock_file.entities = file_data
+                    mock_file.metadata = {}
+                    mock_file.filepath = Path(f"/test/{file_data['sub']}.nii")
+                    mock_file.relative_path = Path(f"{file_data['sub']}.nii")
+                    self.files.append(mock_file)
+                self.participants = {}
+
+        dataset = MockDataset()
+        evaluator = BIQLEvaluator(dataset)
+
+        # Test COUNT(DISTINCT sub) - should return 2 (sub-01, sub-02)
+        parser = BIQLParser.from_string("SELECT COUNT(DISTINCT sub) as unique_subjects")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+
+        assert len(results) == 1
+        assert results[0]["unique_subjects"] == 2
+
+        # Test COUNT(DISTINCT task) - should return 2 (rest, nback)
+        parser = BIQLParser.from_string("SELECT COUNT(DISTINCT task) as unique_tasks")
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+
+        assert len(results) == 1
+        assert results[0]["unique_tasks"] == 2
+
+        # Test COUNT(DISTINCT run) grouped by task
+        parser = BIQLParser.from_string(
+            """
+            SELECT task, COUNT(DISTINCT run) as unique_runs
+            GROUP BY task
+        """
+        )
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+
+        assert len(results) == 2
+
+        # Find results by task
+        rest_result = next(r for r in results if r["task"] == "rest")
+        nback_result = next(r for r in results if r["task"] == "nback")
+
+        assert rest_result["unique_runs"] == 2  # runs 1 and 2
+        assert nback_result["unique_runs"] == 1  # only run 1
+
+        # Test COUNT(DISTINCT sub) in HAVING clause
+        parser = BIQLParser.from_string(
+            """
+            SELECT task, COUNT(DISTINCT sub) as unique_subjects
+            GROUP BY task
+            HAVING COUNT(DISTINCT sub) > 1
+        """
+        )
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+
+        # Only 'rest' task has files from multiple subjects (01 and 02)
+        assert len(results) == 1
+        assert results[0]["task"] == "rest"
+        assert results[0]["unique_subjects"] == 2
+
 
 class TestQSMWorkflow:
     """Test QSM-specific workflow scenarios"""

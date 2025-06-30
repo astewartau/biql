@@ -45,9 +45,20 @@ class BIQLEvaluator:
             result_dict = self._file_to_dict(file)
             result_dicts.append(result_dict)
 
-        # Apply GROUP BY
+        # Apply GROUP BY or create implicit group for aggregate functions
         if query.group_by:
             result_dicts = self._apply_group_by(result_dicts, query.group_by)
+        elif self._has_aggregate_functions(query.select_clause):
+            # If SELECT has aggregate functions but no GROUP BY, create single group
+            if result_dicts:
+                single_group = {
+                    "_count": len(result_dicts),
+                    "_group": result_dicts,
+                    "_aggregates": self._compute_aggregates(result_dicts),
+                }
+                result_dicts = [single_group]
+            else:
+                result_dicts = []
 
         # Apply HAVING
         if query.having:
@@ -376,6 +387,18 @@ class BIQLEvaluator:
 
         return dict(aggregates)
 
+    def _has_aggregate_functions(self, select_clause) -> bool:
+        """Check if SELECT clause contains aggregate functions"""
+        if not select_clause:
+            return False
+
+        for item, alias in select_clause.items:
+            if item.startswith(
+                ("COUNT(", "AVG(", "MAX(", "MIN(", "SUM(", "ARRAY_AGG(")
+            ):
+                return True
+        return False
+
     def _evaluate_array_agg_condition(self, item: Dict, condition_str: str) -> bool:
         """Evaluate a condition for ARRAY_AGG WHERE clause"""
         try:
@@ -501,12 +524,35 @@ class BIQLEvaluator:
     def _evaluate_having(self, grouped_result: Dict, having_expr: Expression) -> bool:
         """Evaluate HAVING clause on grouped results"""
         if isinstance(having_expr, BinaryOp):
-            # Handle COUNT(*) function calls
+            # Handle COUNT(*) and COUNT(DISTINCT field) function calls
             if (
                 isinstance(having_expr.left, FunctionCall)
                 and having_expr.left.name == "COUNT"
             ):
-                count = grouped_result.get("_count", 0)
+                # Check if this is COUNT(DISTINCT field)
+                if (
+                    len(having_expr.left.args) > 0
+                    and isinstance(having_expr.left.args[0], Literal)
+                    and str(having_expr.left.args[0].value).startswith("DISTINCT ")
+                ):
+
+                    # Extract field name from DISTINCT argument
+                    field_name = str(having_expr.left.args[0].value)[
+                        9:
+                    ]  # Remove "DISTINCT "
+
+                    # Count distinct values in the group
+                    group = grouped_result.get("_group", [])
+                    values = set()
+                    for row in group:
+                        value = self._get_nested_value(row, field_name)
+                        if value is not None:
+                            values.add(str(value))
+                    count = len(values)
+                else:
+                    # Regular COUNT(*)
+                    count = grouped_result.get("_count", 0)
+
                 threshold = having_expr.right.value
 
                 if having_expr.operator == TokenType.GT:
@@ -585,12 +631,34 @@ class BIQLEvaluator:
                     selected = result.copy()
                 elif item.startswith("COUNT("):
                     # Handle COUNT aggregate function
-                    if "_count" in result:
-                        key = alias if alias else "count"
-                        selected[key] = result["_count"]
+                    key = alias if alias else "count"
+
+                    # Check if it's COUNT(DISTINCT field)
+                    if "COUNT(DISTINCT " in item:
+                        # Extract field name from COUNT(DISTINCT field)
+                        field_part = item[len("COUNT(DISTINCT ") : -1].strip()
+
+                        if "_group" in result:
+                            # For grouped results, count distinct values of the field
+                            group = result["_group"]
+                            values = set()
+                            for row in group:
+                                value = self._get_nested_value(row, field_part)
+                                if value is not None:
+                                    values.add(
+                                        str(value)
+                                    )  # Convert to string for consistency
+                            selected[key] = len(values)
+                        else:
+                            # For single row, distinct count is either 0 or 1
+                            value = self._get_nested_value(result, field_part)
+                            selected[key] = 1 if value is not None else 0
                     else:
-                        key = alias if alias else "count"
-                        selected[key] = 1
+                        # Regular COUNT(*) or COUNT(field)
+                        if "_count" in result:
+                            selected[key] = result["_count"]
+                        else:
+                            selected[key] = 1
                 elif item.startswith("ARRAY_AGG("):
                     # Handle ARRAY_AGG aggregate function
                     key = alias if alias else "array_agg"
@@ -628,8 +696,15 @@ class BIQLEvaluator:
 
                             selected[key] = sorted(values)
                         else:
-                            # Regular ARRAY_AGG(field) - same as auto-aggregation
+                            # Regular ARRAY_AGG(field) or ARRAY_AGG(DISTINCT field)
                             field_match = item[10:-1]  # Remove "ARRAY_AGG(" and ")"
+
+                            # Check for DISTINCT keyword
+                            is_distinct = False
+                            if field_match.startswith("DISTINCT "):
+                                is_distinct = True
+                                field_match = field_match[9:]  # Remove "DISTINCT "
+
                             values = []
                             seen = set()
                             for group_item in result["_group"]:
@@ -642,9 +717,15 @@ class BIQLEvaluator:
                                         group_item, field_match
                                     )
 
-                                if value is not None and value not in seen:
-                                    values.append(value)
-                                    seen.add(value)
+                                if value is not None:
+                                    if is_distinct:
+                                        # For DISTINCT, only add if not seen
+                                        if value not in seen:
+                                            values.append(value)
+                                            seen.add(value)
+                                    else:
+                                        # For non-DISTINCT, add all values
+                                        values.append(value)
 
                             selected[key] = sorted(values)
                     else:

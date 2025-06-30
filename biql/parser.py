@@ -151,6 +151,21 @@ class BIQLParser:
                             self._consume(TokenType.RPAREN)
                             func_expr = f"{func_name}(*)"
                             expr = func_expr
+                    elif self._current_token_type() == TokenType.DISTINCT:
+                        # Handle DISTINCT in aggregate functions
+                        self._consume(TokenType.DISTINCT)
+                        arg = self._parse_identifier_path()
+
+                        # Check for WHERE clause after DISTINCT
+                        if self._current_token_type() == TokenType.WHERE:
+                            self._consume(TokenType.WHERE)
+                            condition = self._parse_expression()
+                            self._consume(TokenType.RPAREN)
+                            condition_str = self._expr_to_string(condition)
+                            expr = f"{func_name}(DISTINCT {arg} WHERE {condition_str})"
+                        else:
+                            self._consume(TokenType.RPAREN)
+                            expr = f"{func_name}(DISTINCT {arg})"
                     else:
                         arg = self._parse_identifier_path()
 
@@ -360,12 +375,25 @@ class BIQLParser:
         self._consume(TokenType.LPAREN)
 
         args = []
+        distinct = False
+
         if self._current_token_type() != TokenType.RPAREN:
+            # Check for DISTINCT keyword
+            if self._current_token_type() == TokenType.DISTINCT:
+                self._consume(TokenType.DISTINCT)
+                distinct = True
+
             if self._current_token_type() == TokenType.STAR:
                 self._consume(TokenType.STAR)
-                args.append(Literal("*"))
+                args.append(Literal("DISTINCT *" if distinct else "*"))
             else:
-                args.append(self._parse_expression())
+                first_arg = self._parse_expression()
+                if distinct:
+                    # Create a special representation for DISTINCT
+                    args.append(Literal(f"DISTINCT {self._expr_to_string(first_arg)}"))
+                else:
+                    args.append(first_arg)
+
                 while self._current_token_type() == TokenType.COMMA:
                     self._consume(TokenType.COMMA)
                     args.append(self._parse_expression())

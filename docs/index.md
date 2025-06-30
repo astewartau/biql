@@ -77,9 +77,9 @@ Ready to start querying your BIDS data? Choose your path:
 | Guide | Description |
 |:------|:------------|
 | [🚀 Quickstart](quickstart.html) | Get up and running in 5 minutes |
-| [📖 Language Guide](language.html) | Complete BIQL syntax reference |
+| [📚 Interactive Tutorial](tutorial.html) | Step-by-step guide with live examples |
+| [📖 Language Reference](language.html) | Complete BIQL syntax reference |
 | [⚙️ CLI Reference](cli.html) | Command-line tool documentation |
-| [🔬 Examples](examples.html) | Real-world query examples |
 
 ## Community
 

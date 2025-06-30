@@ -92,7 +92,7 @@ def main():
 
     # Example 6: Pattern matching
     print("=== Example 6: Pattern matching ===")
-    parser = BIQLParser.from_string("task~=/.*back.*/ OR suffix=*bold*")
+    parser = BIQLParser.from_string('task~=".*back.*" OR suffix=*bold*')
     query = parser.parse()
     results = evaluator.evaluate(query)
 

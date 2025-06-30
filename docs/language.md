@@ -1,665 +1,450 @@
 ---
-layout: default
 title: Language Reference
-nav_order: 3
-description: "Complete syntax guide and reference for the BIDS Query Language"
+nav_order: 4
 ---
 
 # BIQL Language Reference
 
-Complete syntax guide and reference for the BIDS Query Language.
+BIQL (BIDS Query Language) is a SQL-like query language for querying Brain Imaging Data Structure (BIDS) datasets. This reference describes all language constructs, clauses, and operators.
 
-## Table of Contents
+## What BIQL Queries
 
-- [Query Structure](#query-structure)
-- [SELECT Clause](#select-clause)
-- [WHERE Clause](#where-clause)
-- [GROUP BY and Aggregation](#group-by-and-aggregation)
-- [HAVING Clause](#having-clause)
-- [ORDER BY Clause](#order-by-clause)
-- [DISTINCT](#distinct)
-- [Operators](#operators)
-- [Data Types](#data-types)
-- [BIDS Entities](#bids-entities)
-- [Metadata Access](#metadata-access)
-- [Participant Data](#participant-data)
+BIQL queries operate on BIDS datasets, which are structured neuroimaging data repositories following the Brain Imaging Data Structure specification. When you query with BIQL, you're searching through:
+
+### 1. BIDS Entities from Filenames
+
+BIDS filenames encode metadata using key-value pairs separated by underscores. For example:
+```
+sub-01_ses-pre_task-rest_run-1_bold.nii.gz
+```
+
+From this filename, BIQL extracts:
+- `sub` = "01" (subject identifier)
+- `ses` = "pre" (session identifier)
+- `task` = "rest" (task name)
+- `run` = "1" (run number)
+- `suffix` = "bold" (file type suffix)
+- `datatype` = "func" (from parent directory)
+
+Common BIDS entities include:
+- `sub` - Subject identifier
+- `ses` - Session identifier
+- `task` - Task name
+- `run` - Run number
+- `acq` - Acquisition label
+- `ce` - Contrast enhancing agent
+- `rec` - Reconstruction label
+- `dir` - Phase encoding direction
+- `echo` - Echo number
+- `part` - Part label (e.g., mag, phase)
+- `space` - Spatial reference
+- `res` - Resolution
+- `den` - Density
+- `label` - Label or atlas name
+- `desc` - Description
+
+The complete list of entities is defined in the [BIDS specification](https://bids-specification.readthedocs.io/).
+
+### 2. JSON Sidecar Metadata
+
+BIDS datasets include JSON sidecar files that contain additional metadata. BIQL makes these accessible through the `metadata` namespace:
+
+```sql
+WHERE metadata.EchoTime < 0.005
+WHERE metadata.RepetitionTime = 2.0
+SELECT metadata.MagneticFieldStrength, metadata.ManufacturerModelName
+```
+
+Common metadata fields include:
+- `RepetitionTime` (TR)
+- `EchoTime` (TE)
+- `FlipAngle`
+- `SliceTiming`
+- `PhaseEncodingDirection`
+- `MagneticFieldStrength`
+- `Manufacturer`
+- `ManufacturerModelName`
+- `SequenceName`
+
+The metadata follows BIDS inheritance principle: metadata defined at higher levels (e.g., dataset or subject level) applies to all applicable files below unless overridden.
+
+### 3. Participants Information
+
+The `participants.tsv` file contains subject-level information. BIQL makes these accessible through the `participants` namespace:
+
+```sql
+WHERE participants.age > 18
+SELECT sub, participants.sex, participants.handedness
+```
+
+Common participants fields include:
+- `age`
+- `sex`
+- `handedness`
+- `group`
+- Any custom columns defined in your participants.tsv file
+
+### 4. Computed Fields
+
+BIQL also provides computed fields for convenience:
+- `filename` - Just the file name
+- `filepath` - Full absolute path to the file
+- `relative_path` - Path relative to dataset root
+- `extension` - File extension (e.g., ".nii.gz")
 
 ## Query Structure
 
-BIQL queries follow a familiar SQL-like structure:
+BIQL queries follow a SQL-like structure:
 
 ```sql
-[SELECT [DISTINCT] field1, field2, ...]
-[WHERE condition]
-[GROUP BY field1, field2, ...]
-[HAVING condition]
-[ORDER BY field1 [ASC|DESC], field2 [ASC|DESC], ...]
-[FORMAT output_format]
+SELECT fields
+WHERE conditions
+GROUP BY fields
+HAVING aggregate_conditions
+ORDER BY fields [ASC|DESC]
+FORMAT output_type
 ```
 
-All clauses are optional. The simplest query is just a WHERE condition:
-
+Minimal queries can be just conditions:
 ```sql
 sub=01
 ```
 
-## SELECT Clause
+## Clauses
 
-The SELECT clause specifies which fields to include in the output.
+### SELECT
 
-### Basic Field Selection
-
-```sql
-SELECT sub, ses, task, filename
-```
-
-### Wildcard Selection
+Specifies which fields to return in the result set.
 
 ```sql
-SELECT *
+SELECT sub, ses, task, filepath
 ```
 
-### Field Aliases
+### WHERE
+
+Filters data based on conditions.
 
 ```sql
-SELECT sub AS subject, ses AS session, filepath AS file_path
+WHERE datatype=func AND task=rest
 ```
 
-### Aggregate Functions
+### GROUP BY
+
+Groups results by specified fields.
 
 ```sql
-SELECT COUNT(*) AS total_files
-SELECT sub, COUNT(*) AS files_per_subject
-SELECT AVG(metadata.RepetitionTime) AS mean_tr
-SELECT MAX(run) AS max_run, MIN(run) AS min_run
+GROUP BY sub, ses
 ```
 
-**Available Functions:**
-- `COUNT(*)` - Count rows
-- `COUNT(field)` - Count non-null values
-- `AVG(field)` - Average of numeric values
-- `MAX(field)` - Maximum value
-- `MIN(field)` - Minimum value
-- `SUM(field)` - Sum of numeric values
-- `ARRAY_AGG(field)` - Collect values into array
-- `ARRAY_AGG(field WHERE condition)` - Collect filtered values into array
+### HAVING
 
-### Auto-Aggregation with GROUP BY
-
-When using GROUP BY, non-grouped fields are automatically aggregated into arrays:
+Filters grouped results based on aggregate conditions.
 
 ```sql
--- Without GROUP BY: Returns individual files
-SELECT sub, filename
-
--- With GROUP BY: Returns arrays of filenames per subject
-SELECT sub, filename GROUP BY sub
-```
-
-**Result:**
-```json
-[
-  {
-    "sub": "01",
-    "filename": ["sub-01_T1w.nii", "sub-01_task-rest_bold.nii", ...]
-  }
-]
-```
-
-## WHERE Clause
-
-The WHERE clause filters results based on conditions.
-
-### Basic Comparisons
-
-```sql
--- Equality
-sub=01
-task=rest
-datatype=func
-
--- Inequality
-run!=1
-metadata.RepetitionTime>2.0
-participants.age<30
-```
-
-### Logical Operators
-
-```sql
--- AND
-sub=01 AND task=rest
-
--- OR
-task=rest OR task=nback
-
--- NOT
-NOT datatype=func
-
--- Grouping with parentheses
-(sub=01 OR sub=02) AND datatype=func
-```
-
-### Field Existence Checks
-
-Test whether a field exists and has a non-null value:
-
-```sql
--- Files that have an acquisition parameter
-WHERE acq
-
--- Files with RepetitionTime metadata
-WHERE metadata.RepetitionTime
-
--- Files with participant age data
-WHERE participants.age
-```
-
-**Common Pattern - Entity Discovery:**
-```sql
--- What acquisitions are available in the dataset?
-SELECT DISTINCT acq WHERE acq
-
--- What echo times are used?
-SELECT DISTINCT metadata.EchoTime
-WHERE metadata.EchoTime
-ORDER BY metadata.EchoTime
-```
-
-{: .highlight }
-> **Field Existence vs Null Comparison:** `WHERE field` checks for field existence and non-null values. This filters out files where the field is missing or null, giving clean entity discovery results.
-
-### Pattern Matching
-
-#### Wildcard Patterns
-```sql
--- Asterisk (*) matches any characters
-suffix=*bold*
-filename=sub-01*
-
--- Question mark (?) matches single character
-suffix=T?w
-```
-
-#### Regular Expressions
-```sql
--- Regex matching with ~= operator
-sub~="0[1-5]"
-task~=".*back.*"
-filename~="sub-\d+_ses-\d+.*"
-```
-
-#### SQL-style LIKE
-```sql
--- LIKE with % and _ wildcards
-task LIKE %back%
-filename LIKE sub-01_%
-```
-
-### Range Queries
-
-```sql
--- Numeric ranges
-run=[1:3]          -- run 1, 2, or 3
-metadata.EchoTime=[0.01:0.05]
-
--- List membership
-sub IN [01, 02, 03]
-task IN [rest, nback, faces]
-```
-
-### Null and Existence Checks
-
-```sql
--- Check if field exists
-task
-metadata.RepetitionTime
-
--- Check for specific values including null
-run=null
-metadata.EchoTime!=null
-```
-
-## GROUP BY and Aggregation
-
-GROUP BY groups results by specified fields and enables aggregation.
-
-### Basic Grouping
-
-```sql
-SELECT sub, COUNT(*) GROUP BY sub
-```
-
-### Multiple Fields
-
-```sql
-SELECT sub, ses, task, COUNT(*)
-GROUP BY sub, ses, task
-```
-
-### Auto-Aggregation Behavior
-
-Fields not in GROUP BY are automatically aggregated into arrays or single values:
-
-```sql
-SELECT sub, filename, COUNT(*) GROUP BY sub
-```
-
-**Result shows arrays of filenames per subject:**
-```json
-[
-  {
-    "sub": "01",
-    "filename": ["file1.nii", "file2.nii"],
-    "count": 2
-  }
-]
-```
-
-**Auto-Aggregation Logic:**
-- **Single unique value** → returned as string/number (not array)
-- **Multiple unique values** → returned as array
-- **No values** → null
-- **Mixed null/non-null** → array contains only non-null values
-
-{: .highlight }
-> **Critical for Reconstruction Workflows:** GROUP BY creates filename arrays
-
-```sql
--- QSM magnitude/phase grouping
-SELECT sub, ses, acq, filename, COUNT(*) as files
-WHERE (part=mag OR part=phase) AND suffix=MEGRE
-GROUP BY sub, ses, acq
-```
-
-**Result includes filename arrays for each reconstruction group:**
-```json
-[
-  {
-    "sub": "01",
-    "ses": "1",
-    "acq": "GRE",
-    "filename": [
-      "sub-01_ses-1_acq-GRE_part-mag_MEGRE.nii",
-      "sub-01_ses-1_acq-GRE_part-phase_MEGRE.nii"
-    ],
-    "files": 2
-  }
-]
-```
-
-## HAVING Clause
-
-HAVING filters grouped results based on aggregate conditions.
-
-```sql
--- Subjects with more than 10 files
-SELECT sub, COUNT(*)
-GROUP BY sub
 HAVING COUNT(*) > 10
-
--- Tasks with sufficient data
-SELECT task, COUNT(*)
-GROUP BY task
-HAVING COUNT(*) >= 20
 ```
 
-**Supported Operators in HAVING:**
-- `>`, `<`, `>=`, `<=`, `=`, `!=`
+### ORDER BY
 
-## ORDER BY Clause
-
-ORDER BY sorts results by specified fields.
-
-### Basic Sorting
+Sorts results by specified fields in ascending (ASC) or descending (DESC) order.
 
 ```sql
-ORDER BY sub
-ORDER BY sub ASC          -- Ascending (default)
-ORDER BY sub DESC         -- Descending
+ORDER BY sub ASC, task DESC
 ```
 
-### Multiple Fields
+### FORMAT
+
+Specifies the output format for results.
 
 ```sql
-ORDER BY sub ASC, ses DESC, run ASC
+FORMAT json
 ```
 
-### Sorting with Aggregation
+## Keywords
+
+### DISTINCT
+
+Returns only unique values.
 
 ```sql
-SELECT task, COUNT(*)
-GROUP BY task
-ORDER BY COUNT(*) DESC    -- Most common tasks first
+SELECT DISTINCT task
 ```
 
-## DISTINCT
+### AS
 
-DISTINCT removes duplicate rows from results.
-
-### Basic Usage
+Creates aliases for fields or expressions.
 
 ```sql
-SELECT DISTINCT sub           -- Unique subjects
-SELECT DISTINCT task          -- Unique tasks
-SELECT DISTINCT datatype      -- Unique datatypes
+SELECT COUNT(*) AS file_count
 ```
 
-### Multiple Fields
+### AND, OR, NOT
+
+Logical operators for combining conditions.
 
 ```sql
-SELECT DISTINCT sub, ses      -- Unique subject/session combinations
+WHERE datatype=func AND (task=rest OR task=nback)
+WHERE NOT suffix=events
 ```
 
-### With WHERE Conditions
+### IN
+
+Tests if a value is within a list.
 
 ```sql
-SELECT DISTINCT task WHERE datatype=func
+WHERE task IN [rest, nback, flanker]
 ```
 
 ## Operators
 
 ### Comparison Operators
 
-| Operator | Description | Example |
-|----------|-------------|---------|
-| `=` | Equal | `sub=01` |
-| `!=` | Not equal | `run!=1` |
-| `>` | Greater than | `run>1` |
-| `<` | Less than | `participants.age<30` |
-| `>=` | Greater or equal | `metadata.RepetitionTime>=2.0` |
-| `<=` | Less or equal | `run<=3` |
+- `=` or `==` - Equality
+- `!=` - Not equal
+- `>` - Greater than
+- `<` - Less than
+- `>=` - Greater than or equal
+- `<=` - Less than or equal
 
-### Pattern Operators
+```sql
+WHERE run > 2
+WHERE metadata.RepetitionTime <= 3.0
+```
 
-| Operator | Description | Example |
-|----------|-------------|---------|
-| `~=` | Regex match | `sub~="0[1-3]"` |
-| `LIKE` | SQL-style pattern | `task LIKE %back%` |
+### Pattern Matching Operator
 
-### Logical Operators
+- `~=` - Regular expression match
 
-| Operator | Description | Example |
-|----------|-------------|---------|
-| `AND` | Logical AND | `sub=01 AND task=rest` |
-| `OR` | Logical OR | `task=rest OR task=nback` |
-| `NOT` | Logical NOT | `NOT datatype=func` |
+```sql
+WHERE task~=/.*back.*/
+```
 
-### Set Operators
+### Range Operator
 
-| Operator | Description | Example |
-|----------|-------------|---------|
-| `IN` | List membership | `sub IN [01, 02, 03]` |
-| `[start:end]` | Range | `run=[1:3]` |
+Specifies a range of values using `[start:end]` syntax.
+
+```sql
+WHERE run=[1:5]
+```
+
+## Aggregate Functions
+
+### COUNT
+
+Counts records or non-null values.
+
+```sql
+SELECT COUNT(*) AS total_files
+SELECT COUNT(ses) AS sessions_with_data
+```
+
+### AVG
+
+Calculates the average of numeric values.
+
+```sql
+SELECT AVG(metadata.RepetitionTime) AS avg_tr
+```
+
+### MAX
+
+Returns the maximum value.
+
+```sql
+SELECT MAX(run) AS max_run
+```
+
+### MIN
+
+Returns the minimum value.
+
+```sql
+SELECT MIN(metadata.EchoTime) AS min_echo_time
+```
+
+### SUM
+
+Calculates the sum of numeric values.
+
+```sql
+SELECT SUM(metadata.NumberOfVolumes) AS total_volumes
+```
+
+### ARRAY_AGG
+
+Collects values into an array, optionally with conditions.
+
+```sql
+SELECT ARRAY_AGG(filename) AS all_files
+SELECT ARRAY_AGG(filename WHERE part='mag') AS magnitude_files
+```
+
+## Field Types
+
+### BIDS Entities
+
+Standard BIDS entities can be queried directly:
+
+- `sub` - Subject identifier
+- `ses` - Session identifier
+- `task` - Task name
+- `run` - Run number
+- `acq` - Acquisition label
+- `datatype` - Data type (func, anat, dwi, etc.)
+- `suffix` - File suffix (T1w, bold, events, etc.)
+- `part` - Part label (mag, phase for multi-part data)
+- `echo` - Echo number
+
+```sql
+WHERE sub=01 AND ses=pre AND task=rest
+```
+
+### Computed Fields
+
+- `filename` - Just the file name
+- `filepath` - Full file path
+- `relative_path` - Path relative to dataset root
+
+```sql
+SELECT filename, filepath
+```
+
+### Nested Access
+
+Access metadata from JSON sidecars or participants.tsv:
+
+- `metadata.FieldName` - Access JSON sidecar fields
+- `participants.FieldName` - Access participants.tsv columns
+
+```sql
+WHERE metadata.RepetitionTime < 2.0
+SELECT participants.age, participants.sex
+```
+
+## Pattern Matching
+
+### Wildcards
+
+- `*` - Matches any sequence of characters
+- `?` - Matches single character
+
+```sql
+WHERE suffix=*bold*
+WHERE task=?back
+```
+
+### Regular Expressions
+
+Use the `~=` operator with regex patterns in string literals:
+
+```sql
+WHERE suffix~="T[12]w"
+WHERE task~="rest|task"
+```
 
 ## Data Types
 
-### Automatic Type Detection
+BIQL takes a flexible approach to data types, automatically handling type conversions based on context. This makes queries more intuitive and forgiving of different data representations.
 
-BIQL automatically detects and converts data types:
+### Strings
 
-```sql
--- String comparison
-sub="01"
-
--- Numeric comparison
-run=1
-metadata.RepetitionTime=2.0
-
--- Boolean (for metadata)
-metadata.SliceEncodingDirection=true
-```
-
-### Type Coercion
-
-- Strings that look like numbers are converted for comparison
-- `"01"` and `1` are treated as equivalent for numeric operations
-- String comparison used as fallback when numeric conversion fails
-
-## BIDS Entities
-
-BIQL provides direct access to all BIDS entities:
-
-### Standard Entities
+Enclosed in single or double quotes:
 
 ```sql
-sub              -- Subject ID
-ses              -- Session ID
-task             -- Task name
-run              -- Run number
-acq              -- Acquisition parameters
-rec              -- Reconstruction algorithm
-space            -- Template space
-res              -- Resolution
-den              -- Density
-desc             -- Description
+WHERE task='rest' OR task="n-back"
 ```
 
-### Modality-Specific Entities
+### Numbers
+
+Integer or floating-point values:
 
 ```sql
--- fMRI
-echo             -- Echo number
-flip             -- Flip angle
-inv              -- Inversion time
-mt               -- Magnetization transfer
-part             -- Part (mag, phase, real, imag)
-recording        -- Recording type
-
--- DWI
-dir              -- Diffusion direction
-dwi              -- DWI identifier
-
--- Anatomical
-acq              -- Acquisition
-ce               -- Contrast enhancement
-rec              -- Reconstruction
-mod              -- Modality
+WHERE run=1
+WHERE metadata.RepetitionTime=2.5
 ```
 
-### Derivatives Entities
+### Flexible Value Matching
+
+BIQL intelligently matches values regardless of their representation:
+
+- Leading zeros are handled automatically: `sub=01` matches `sub=1` and `sub=001`
+- String and numeric comparisons work interchangeably: `run=1` matches `run='1'`
+- The comparison adapts to the context:
+  - For BIDS entities that are typically zero-padded (like `sub-01`), queries work with or without padding
+  - For numeric metadata fields, string representations are converted appropriately
+
+Examples:
+```sql
+WHERE sub=1        # Matches sub-01, sub-001, etc.
+WHERE sub=01       # Also matches sub-1, sub-01, sub-001
+WHERE run='2'      # Matches run-2, run-02
+WHERE echo=1       # Matches echo-1, echo-01
+```
+
+### Lists
+
+Comma-separated values in square brackets:
 
 ```sql
--- Processing pipeline
-pipeline         -- Pipeline name
-atlas            -- Atlas used
-roi              -- Region of interest
-model            -- Statistical model
+WHERE task IN [rest, nback, flanker]
+WHERE sub IN [1, 2, 3]    # Matches sub-01, sub-02, sub-03
 ```
 
-### File Properties
+### Ranges
+
+Start and end values in square brackets with colon:
 
 ```sql
-datatype         -- BIDS datatype (anat, func, dwi, etc.)
-suffix           -- File suffix (T1w, bold, dwi, etc.)
-extension        -- File extension (.nii, .json, .tsv)
-filename         -- Complete filename
-filepath         -- Full file path
-relative_path    -- Path relative to BIDS root
+WHERE run=[1:5]      # Matches run-1 through run-5 (including run-01, etc.)
+WHERE echo=[1:3]     # Matches echo-1, echo-2, echo-3
 ```
 
-## Metadata Access
+## Output Formats
 
-Access JSON metadata using dot notation:
+Available output formats for the FORMAT clause:
 
-### Basic Metadata Access
+- `json` - JSON format (default)
+- `table` - ASCII table
+- `csv` - Comma-separated values
+- `tsv` - Tab-separated values
+- `paths` - Just file paths
+- `dataframe` - Pandas DataFrame (Python API only)
 
 ```sql
-metadata.RepetitionTime
-metadata.EchoTime
-metadata.FlipAngle
-metadata.MagneticFieldStrength
+FORMAT table
+FORMAT csv
 ```
 
-### Nested Metadata
+## Special Features
+
+### Implicit AND
+
+Adjacent conditions without explicit AND are treated as AND:
 
 ```sql
-metadata.SliceEncodingDirection
-metadata.PhaseEncodingDirection
-metadata.TaskName
-metadata.Instructions
+subject=01 task=rest
+-- Equivalent to:
+subject=01 AND task=rest
 ```
 
-### Metadata Queries
+### Comments
+
+Lines starting with `#` are treated as comments:
 
 ```sql
--- Find scans with specific parameters
-WHERE metadata.RepetitionTime=2.0
-WHERE metadata.EchoTime<0.05
-WHERE metadata.MagneticFieldStrength=3.0
-
--- Group by acquisition parameters
-SELECT metadata.RepetitionTime, COUNT(*)
-GROUP BY metadata.RepetitionTime
+# This query finds all functional data
+WHERE datatype=func
 ```
 
-### Metadata Inheritance
+### Case Sensitivity
 
-BIQL follows BIDS inheritance rules:
-- Dataset-level metadata applies to all files
-- Subject/session-level metadata overrides dataset-level
-- File-specific metadata has highest priority
+- Keywords are case-insensitive: `SELECT`, `select`, `Select` are equivalent
+- Entity values preserve case: `task=Rest` is different from `task=rest`
 
-## Participant Data
+### Flexible Identifiers
 
-Access participant information from `participants.tsv`:
-
-### Basic Participant Access
+Identifiers can contain hyphens:
 
 ```sql
-participants.age
-participants.sex
-participants.group
-participants.handedness
+WHERE task=n-back
 ```
-
-### Participant Queries
-
-```sql
--- Filter by demographics
-WHERE participants.age>25
-WHERE participants.sex="F"
-WHERE participants.group="control"
-
--- Group by participant characteristics
-SELECT participants.group, COUNT(*)
-GROUP BY participants.group
-```
-
-### Combined Entity and Participant Queries
-
-```sql
--- Functional scans from female participants over 25
-SELECT sub, task, participants.age, participants.sex
-WHERE datatype=func AND participants.sex="F" AND participants.age>25
-```
-
-## Query Examples by Use Case
-
-### Dataset Exploration
-
-```sql
--- Overview of available data
-SELECT datatype, COUNT(*) GROUP BY datatype
-
--- Subjects and sessions
-SELECT DISTINCT sub, ses ORDER BY sub, ses
-
--- Available tasks
-SELECT DISTINCT task WHERE datatype=func
-```
-
-### Quality Control
-
-```sql
--- Check data completeness
-SELECT sub, COUNT(*) as total_files
-GROUP BY sub
-ORDER BY total_files
-
--- Find missing sessions
-SELECT sub, ses, COUNT(*)
-GROUP BY sub, ses
-HAVING COUNT(*) < 10
-```
-
-### Processing Pipelines
-
-```sql
--- T1w files for preprocessing
-SELECT sub, ses, filepath WHERE suffix=T1w
-
--- Functional runs for specific task
-SELECT sub, ses, run, filepath
-WHERE datatype=func AND task=nback
-ORDER BY sub, ses, run
-```
-
-### QSM Workflows
-
-```sql
--- QSM reconstruction groups
-SELECT sub, ses, acq, filename, COUNT(*)
-WHERE (part=mag OR part=phase) AND suffix=MEGRE
-GROUP BY sub, ses, acq
-
--- Separate magnitude and phase files for QSM
-SELECT sub, ses, acq, run,
-       ARRAY_AGG(filename WHERE part='mag') AS mag_filenames,
-       ARRAY_AGG(filename WHERE part='phase') AS phase_filenames
-WHERE (part='mag' OR part='phase') AND suffix=MEGRE
-GROUP BY sub, ses, acq, run
-
--- Multi-echo parameters
-SELECT DISTINCT echo, metadata.EchoTime
-WHERE suffix=MEGRE
-ORDER BY metadata.EchoTime
-```
-
-## Performance Tips
-
-1. **Use DISTINCT for exploration** - Faster than GROUP BY for unique values
-2. **Filter early** - Put selective conditions first in WHERE clause
-3. **Limit field selection** - Only SELECT fields you need
-4. **Index-friendly queries** - Entity-based filters are fastest
-5. **Avoid complex regex** - Use wildcards when possible
-
-## Error Handling
-
-BIQL gracefully handles common issues without crashing:
-
-### Graceful Failure Modes
-
-- **Missing fields** → Return null or exclude from results
-- **Type mismatches** → Fall back to string comparison
-- **Invalid regex** → Skip pattern matching, continue query
-- **Missing metadata** → Return null values
-- **Malformed queries** → Clear error messages with position
-
-### Type Conversion Fallbacks
-
-```sql
--- Numeric comparison attempts first, falls back to string
-WHERE sub>5  -- Works even when sub is "01" (string comparison)
-WHERE run<10 -- Converts "3" to 3 for numeric comparison
-```
-
-### Missing Field Handling
-
-```sql
--- Queries against non-existent fields return empty results
-WHERE nonexistent_field=value  -- Returns no results, no error
-
--- Missing metadata is handled gracefully
-WHERE metadata.MissingParameter>1.0  -- Returns no results
-```
-
-### Null Value Aggregation
-
-```sql
--- Mixed null/non-null values in GROUP BY
-SELECT sub, metadata.RepetitionTime GROUP BY sub
--- Result: Only non-null TR values included in arrays
-```
-
-Continue to [CLI Reference](cli.html) for command-line usage details.

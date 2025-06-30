@@ -1,0 +1,89 @@
+name: Execute Notebook and Generate Tutorial
+
+on:
+  push:
+    branches: [ "main", "master" ]
+    paths: [ "docs/guide.ipynb" ]
+  pull_request:
+    branches: [ "main", "master" ]
+    paths: [ "docs/guide.ipynb" ]
+  workflow_dispatch:
+
+jobs:
+  execute-notebook:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install jupyter nbconvert pandas
+          # Install BIQL from current source
+          pip install -e .
+
+      - name: Clone BIDS examples
+        run: |
+          mkdir -p docs/example-notebooks
+          cd docs/example-notebooks
+          git clone https://github.com/bids-standard/bids-examples.git
+
+      - name: Execute notebook
+        run: |
+          cd docs
+          jupyter nbconvert --to notebook --execute --inplace guide.ipynb --ExecutePreprocessor.timeout=300
+
+      - name: Convert notebook to markdown
+        run: |
+          cd docs
+          jupyter nbconvert --to markdown guide.ipynb --output tutorial.md
+
+      - name: Add Jekyll front matter and navigation
+        run: |
+          cd docs
+          # Create the final tutorial page with Jekyll front matter
+          cat > tutorial_final.md << 'EOF'
+          ---
+          title: BIQL Tutorial
+          nav_order: 3
+          ---
+
+          # BIQL Tutorial
+
+          This tutorial demonstrates how to use the BIDS Query Language (BIQL) to query neuroimaging datasets.
+          The examples below are automatically executed and updated whenever the documentation is built.
+
+          EOF
+
+          # Append the converted notebook content (skip the title since we add our own)
+          tail -n +2 tutorial.md >> tutorial_final.md
+
+          # Move to final location
+          mv tutorial_final.md tutorial.md
+
+      - name: Commit and push changes
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        run: |
+          cd docs
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          # Check if there are changes
+          if git diff --quiet tutorial.md; then
+            echo "No changes to tutorial.md"
+          else
+            echo "Changes detected in tutorial.md"
+            git add tutorial.md guide.ipynb
+            git commit -m "🤖 Auto-update tutorial from notebook execution"
+            git push
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
