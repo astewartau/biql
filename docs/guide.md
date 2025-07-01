@@ -43,7 +43,7 @@ import sys
 if 'google.colab' in sys.modules:
     !pip install git+https://github.com/astewartau/biql.git > /dev/null 2>&1
 
-# Set up paths - use a temporary directory that works in different environments
+# Set up paths - use a temporary directory that works in different environments 
 bids_examples_dir = Path(tempfile.gettempdir()) / "bids-examples"
 
 # Clone bids-examples if it doesn't exist
@@ -826,7 +826,7 @@ len(results)  # Count of files with 'bold' in suffix
 
 ```python
 q.run_query(
-    "SELECT DISTINCT task WHERE task~=\".*back.*\"",
+    "SELECT DISTINCT task WHERE task~=\".*back*\"",
     format="dataframe"
 )
 ```
@@ -868,44 +868,89 @@ q.run_query(
 
 ## Part 4: Ranges and Lists
 
-BIQL supports range queries and IN operators for matching multiple values:
+BIQL supports convenient syntax for matching multiple values and ranges:
 
-### DISTINCT vs Non-DISTINCT Aggregations
+### List Matching with IN
 
-BIQL supports both DISTINCT and non-DISTINCT array aggregations:
-
-- **With DISTINCT**: `ARRAY_AGG(DISTINCT field)` returns only unique non-null values
-- **Without DISTINCT**: `ARRAY_AGG(field)` returns all values including duplicates and nulls
-
-The count of items in a non-DISTINCT array will match `COUNT(*)` for the group:
+Use `IN` to match any value from a list:
 
 
 ```python
+# Find files for specific subjects
 q.run_query(
-    "SELECT sub, ARRAY_AGG(DISTINCT task) as tasks, COUNT(*) as total_files "
-    "WHERE sub IN ['01', '02', '03'] "
-    "GROUP BY sub",
-    format="json"
-)
+    "SELECT sub, task, filename WHERE sub IN ['01', '02', '03'] AND datatype=func",
+    format="dataframe"
+).head()
 ```
 
 
 
 
-    [{'sub': '01', 'tasks': ['nback', 'rest', 'stroop'], 'total_files': 12},
-     {'sub': '02', 'tasks': ['nback', 'rest', 'stroop'], 'total_files': 12},
-     {'sub': '03', 'tasks': ['nback', 'rest', 'stroop'], 'total_files': 12}]
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>sub</th>
+      <th>task</th>
+      <th>filename</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>01</td>
+      <td>nback</td>
+      <td>sub-01_ses-02_task-nback_run-02_bold.nii</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>01</td>
+      <td>nback</td>
+      <td>sub-01_ses-02_task-nback_run-01_bold.nii</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>01</td>
+      <td>rest</td>
+      <td>sub-01_ses-02_task-rest_bold.nii</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>01</td>
+      <td>nback</td>
+      <td>sub-01_ses-01_task-nback_run-02_bold.nii</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>01</td>
+      <td>rest</td>
+      <td>sub-01_ses-01_task-rest_bold.nii</td>
+    </tr>
+  </tbody>
+</table>
+</div>
 
 
 
 
 ```python
+# Find specific tasks
 q.run_query(
-    "SELECT task, run, COUNT(*) as file_count, "
-    "COUNT(DISTINCT sub) as subjects "
-    "WHERE datatype=func "
-    "GROUP BY task, run "
-    "ORDER BY task, run",
+    "SELECT DISTINCT sub WHERE task IN ['nback', 'rest']",
     format="dataframe"
 )
 ```
@@ -931,34 +976,126 @@ q.run_query(
   <thead>
     <tr style="text-align: right;">
       <th></th>
-      <th>task</th>
-      <th>run</th>
-      <th>file_count</th>
-      <th>subjects</th>
+      <th>sub</th>
     </tr>
   </thead>
   <tbody>
     <tr>
       <th>0</th>
-      <td>nback</td>
       <td>01</td>
-      <td>10</td>
-      <td>5</td>
     </tr>
     <tr>
       <th>1</th>
-      <td>nback</td>
-      <td>02</td>
-      <td>10</td>
-      <td>5</td>
+      <td>04</td>
     </tr>
     <tr>
       <th>2</th>
-      <td>rest</td>
-      <td>None</td>
-      <td>10</td>
-      <td>5</td>
+      <td>05</td>
     </tr>
+    <tr>
+      <th>3</th>
+      <td>02</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>03</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+
+
+```python
+# Combining lists and other conditions  
+q.run_query(
+    "SELECT sub, COUNT(*) as file_count "
+    "WHERE sub IN ['01', '02'] AND task IN ['nback', 'rest'] "
+    "GROUP BY sub",
+    format="dataframe"
+)
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>sub</th>
+      <th>file_count</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>01</td>
+      <td>6</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>02</td>
+      <td>6</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+
+### Range Matching
+
+Use `[start:end]` syntax for numeric ranges (inclusive):
+
+
+```python
+# Find runs 1 and 2 (inclusive range)
+q.run_query(
+    "SELECT sub, task, run WHERE run=[1:2] AND datatype=func",
+    format="dataframe"
+)
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
   </tbody>
 </table>
 </div>
@@ -1065,75 +1202,182 @@ q.run_query(
 
 
 
+
+```python
+# Compare DISTINCT vs non-DISTINCT - get all task names (including duplicates)
+q.run_query(
+    "SELECT sub, (task) as all_task_names, (DISTINCT task) as unique_tasks "
+    "WHERE sub='01' "
+    "GROUP BY sub",
+    format="json"
+)
+```
+
+
+
+
+    [{'sub': '01',
+      'all_task_names': ['nback',
+       'nback',
+       'nback',
+       'nback',
+       'rest',
+       'rest',
+       'stroop',
+       None,
+       None,
+       None,
+       None,
+       None],
+      'unique_tasks': ['nback', 'rest', 'stroop']}]
+
+
+
+
+```python
+# Get unique tasks per subject
+q.run_query(
+    "SELECT sub, (DISTINCT task) as unique_tasks, COUNT(*) as total_files "
+    "WHERE sub IN ['01', '02', '03'] "
+    "GROUP BY sub",
+    format="json"
+)
+```
+
+
+
+
+    [{'sub': '01', 'unique_tasks': ['nback', 'rest', 'stroop'], 'total_files': 12},
+     {'sub': '02', 'unique_tasks': ['nback', 'rest', 'stroop'], 'total_files': 12},
+     {'sub': '03', 'unique_tasks': ['nback', 'rest', 'stroop'], 'total_files': 12}]
+
+
+
+### Array Aggregation with DISTINCT
+
+BIQL supports collecting values into arrays using the `(field)` syntax:
+
+- `(DISTINCT field)` returns unique non-null values  
+- `(field)` returns all values including duplicates
+
 ## Part 6: Working with Metadata
 
-BIQL can query JSON sidecar metadata using the `metadata.` namespace.
-The synthetic dataset has task-level metadata files like `task-nback_bold.json`:
+BIQL can query JSON sidecar metadata using the `metadata.` namespace. 
+Let's explore a more complex dataset to see this in action:
 
 
 ```python
+# Switch to a dataset with more metadata  
+ds2_path = bids_examples_dir / "ds000117"
+q2 = create_query_engine(ds2_path) if (bids_examples_dir / "ds000117").exists() else q
+
+# Show what metadata fields are available
+q2.run_query(
+    "SELECT DISTINCT task WHERE datatype=func",
+    format="dataframe"
+)
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>task</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>facerecognition</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+
+
+```python
+# For the synthetic dataset, we can still demonstrate basic grouping by task
 q.run_query(
     "SELECT task, COUNT(*) as file_count, "
-    "ARRAY_AGG(DISTINCT sub) as subjects_with_task, "
-    "ARRAY_AGG(DISTINCT datatype) as datatypes "
+    "COUNT(DISTINCT sub) as subjects "
     "GROUP BY task",
-    format="json"
+    format="dataframe"
 )
 ```
 
 
 
 
-    [{'task': None,
-      'file_count': 25,
-      'subjects_with_task': ['01', '02', '03', '04', '05'],
-      'datatypes': ['anat']},
-     {'task': 'nback',
-      'file_count': 20,
-      'subjects_with_task': ['01', '02', '03', '04', '05'],
-      'datatypes': ['func']},
-     {'task': 'rest',
-      'file_count': 10,
-      'subjects_with_task': ['01', '02', '03', '04', '05'],
-      'datatypes': ['func']},
-     {'task': 'stroop',
-      'file_count': 5,
-      'subjects_with_task': ['01', '02', '03', '04', '05'],
-      'datatypes': ['beh']}]
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
 
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
 
-
-
-```python
-q.run_query(
-    "SELECT datatype, COUNT(*) as total_files, "
-    "COUNT(DISTINCT sub) as subjects, "
-    "ARRAY_AGG(DISTINCT sub) as subject_list "
-    "GROUP BY datatype "
-    "ORDER BY total_files DESC",
-    format="json"
-)
-```
-
-
-
-
-    [{'datatype': 'anat',
-      'total_files': 10,
-      'subjects': 5,
-      'subject_list': ['01', '02', '03', '04', '05']},
-     {'datatype': 'func',
-      'total_files': 30,
-      'subjects': 5,
-      'subject_list': ['01', '02', '03', '04', '05']},
-     {'datatype': None,
-      'total_files': 15,
-      'subjects': 5,
-      'subject_list': ['01', '02', '03', '04', '05']},
-     {'datatype': 'beh',
-      'total_files': 5,
-      'subjects': 5,
-      'subject_list': ['01', '02', '03', '04', '05']}]
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>task</th>
+      <th>file_count</th>
+      <th>subjects</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>None</td>
+      <td>25</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>nback</td>
+      <td>20</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>rest</td>
+      <td>10</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>stroop</td>
+      <td>5</td>
+      <td>5</td>
+    </tr>
+  </tbody>
+</table>
+</div>
 
 
 
@@ -1504,9 +1748,9 @@ q.run_query("""
 ```python
 q.run_query("""
     SELECT sub, task,
-           ARRAY_AGG(filename WHERE suffix='bold') as imaging_files,
-           ARRAY_AGG(filename WHERE run='01') as run01_files,
-           ARRAY_AGG(filename WHERE run='02') as run02_files
+           (filename WHERE suffix='bold') as imaging_files,
+           (filename WHERE run='01') as run01_files,
+           (filename WHERE run='02') as run02_files
     WHERE datatype=func
     GROUP BY sub, task
 """, format="table")  # Using table format since arrays don't display well in dataframes
@@ -1662,7 +1906,7 @@ q.run_query("""
     SELECT sub, 
            COUNT(*) as total_files,
            COUNT(DISTINCT datatype) as datatypes,
-           ARRAY_AGG(DISTINCT datatype) as available_data
+           (DISTINCT datatype) as available_data
     GROUP BY sub
 """, format="json")
 ```
@@ -1698,7 +1942,7 @@ q.run_query("""
 q.run_query("""
     SELECT sub, ses,
            COUNT(*) as files_per_session,
-           ARRAY_AGG(DISTINCT task) as tasks_in_session
+           (DISTINCT task) as tasks_in_session
     GROUP BY sub, ses
 """, format="json")
 ```
@@ -1759,7 +2003,7 @@ q.run_query("""
 q.run_query("""
     SELECT sub,
            COUNT(DISTINCT task) as unique_tasks,
-           ARRAY_AGG(DISTINCT task) as completed_tasks,
+           (DISTINCT task) as completed_tasks,
            COUNT(*) as total_functional_files
     WHERE datatype=func
     GROUP BY sub
@@ -1792,27 +2036,3 @@ q.run_query("""
       'total_functional_files': 6}]
 
 
-
-## Summary
-
-You've learned how to:
-
-1. **Basic queries**: Filter by BIDS entities
-2. **Logical operators**: Combine conditions with AND, OR, NOT
-3. **SELECT clause**: Choose specific fields to return
-4. **Pattern matching**: Use wildcards and regex
-5. **Ranges and lists**: Query multiple values efficiently
-6. **Aggregations**: Count and group data
-7. **Metadata queries**: Access JSON sidecar information
-8. **Participant data**: Query demographics
-9. **Complex queries**: Combine multiple features
-10. **Output formats**: Export results in different formats
-
-## Next Steps
-
-- Check out the [Language Reference](language.md) for complete syntax details
-- Explore more [examples](../examples/) for specific use cases
-- Use the CLI tool `biql` for command-line queries
-- Integrate BIQL into your Python analysis pipelines
-
-Happy querying!
