@@ -43,7 +43,7 @@ if 'google.colab' in sys.modules:
     !pip install git+https://github.com/astewartau/biql.git > /dev/null 2>&1
 from biql import create_query_engine
 
-# Set up paths - use a temporary directory that works in different environments 
+# Set up paths - use a temporary directory that works in different environments
 bids_examples_dir = Path(tempfile.gettempdir()) / "bids-examples"
 
 # Clone bids-examples if it doesn't exist
@@ -1093,9 +1093,132 @@ q.run_query(
   <thead>
     <tr style="text-align: right;">
       <th></th>
+      <th>sub</th>
+      <th>task</th>
+      <th>run</th>
     </tr>
   </thead>
   <tbody>
+    <tr>
+      <th>0</th>
+      <td>01</td>
+      <td>nback</td>
+      <td>02</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>01</td>
+      <td>nback</td>
+      <td>01</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>01</td>
+      <td>nback</td>
+      <td>02</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>01</td>
+      <td>nback</td>
+      <td>01</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>04</td>
+      <td>nback</td>
+      <td>02</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>04</td>
+      <td>nback</td>
+      <td>01</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>04</td>
+      <td>nback</td>
+      <td>02</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>04</td>
+      <td>nback</td>
+      <td>01</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>05</td>
+      <td>nback</td>
+      <td>02</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>05</td>
+      <td>nback</td>
+      <td>01</td>
+    </tr>
+    <tr>
+      <th>10</th>
+      <td>05</td>
+      <td>nback</td>
+      <td>02</td>
+    </tr>
+    <tr>
+      <th>11</th>
+      <td>05</td>
+      <td>nback</td>
+      <td>01</td>
+    </tr>
+    <tr>
+      <th>12</th>
+      <td>02</td>
+      <td>nback</td>
+      <td>02</td>
+    </tr>
+    <tr>
+      <th>13</th>
+      <td>02</td>
+      <td>nback</td>
+      <td>01</td>
+    </tr>
+    <tr>
+      <th>14</th>
+      <td>02</td>
+      <td>nback</td>
+      <td>02</td>
+    </tr>
+    <tr>
+      <th>15</th>
+      <td>02</td>
+      <td>nback</td>
+      <td>01</td>
+    </tr>
+    <tr>
+      <th>16</th>
+      <td>03</td>
+      <td>nback</td>
+      <td>01</td>
+    </tr>
+    <tr>
+      <th>17</th>
+      <td>03</td>
+      <td>nback</td>
+      <td>02</td>
+    </tr>
+    <tr>
+      <th>18</th>
+      <td>03</td>
+      <td>nback</td>
+      <td>02</td>
+    </tr>
+    <tr>
+      <th>19</th>
+      <td>03</td>
+      <td>nback</td>
+      <td>01</td>
+    </tr>
   </tbody>
 </table>
 </div>
