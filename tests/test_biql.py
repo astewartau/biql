@@ -2104,6 +2104,33 @@ class TestBIQLFormatter:
         assert len(parsed) == 1
         assert parsed[0]["sub"] == "01"
 
+    def test_json_contains_only_select_fields(self):
+        """Test that JSON output contains only the fields specified in SELECT, no internal fields"""
+        # Create results with only specific fields (no internal fields should be present)
+        results = [
+            {"sub": "01", "task": "nback", "total_files": 5},
+            {"sub": "02", "task": "rest", "total_files": 3},
+        ]
+
+        formatted = BIQLFormatter.format(results, "json")
+        parsed = json.loads(formatted)
+
+        # Verify structure and content
+        assert len(parsed) == 2
+
+        # Each result should contain exactly the expected fields, no more
+        for result in parsed:
+            assert set(result.keys()) == {"sub", "task", "total_files"}
+            assert "sub" in result
+            assert "task" in result
+            assert "total_files" in result
+
+            # Most importantly: no internal fields should be present
+            for key in result.keys():
+                assert not key.startswith(
+                    "_"
+                ), f"Found internal field '{key}' in JSON output"
+
     def test_complex_value_formatting(self):
         """Test formatting of complex values (lists, nested dicts)"""
         results = [
@@ -2209,23 +2236,30 @@ class TestBIQLFormatter:
         assert "/data/sub-02_task-rest_bold.nii" in lines
         assert "/data/sub-02_task-nback_bold.nii" in lines
 
-    def test_paths_formatting_with_preserved_paths(self):
-        """Test paths formatting uses preserved file paths regardless of selected fields"""
-        results_with_preserved_paths = [
-            {
-                "sub": "01",
-                "_file_paths": [
-                    "/data/sub-01_task-rest_bold.nii",
-                    "/data/sub-01_task-nback_bold.nii",
-                ],
-            },
-            {"task": "rest", "_file_paths": ["/data/sub-02_task-rest_bold.nii"]},
+    def test_paths_formatting_with_original_files(self):
+        """Test paths formatting uses original files regardless of selected fields"""
+
+        # Mock file objects for the original files parameter
+        class MockFile:
+            def __init__(self, filepath):
+                self.filepath = filepath
+
+        original_files = [
+            MockFile("/data/sub-01_task-rest_bold.nii"),
+            MockFile("/data/sub-01_task-nback_bold.nii"),
+            MockFile("/data/sub-02_task-rest_bold.nii"),
         ]
 
-        paths_output = BIQLFormatter.format(results_with_preserved_paths, "paths")
+        # Results only contain selected fields (no _file_paths)
+        results = [
+            {"sub": "01"},
+            {"task": "rest"},
+        ]
+
+        paths_output = BIQLFormatter.format(results, "paths", original_files)
         lines = paths_output.strip().split("\n")
 
-        # Should use the preserved file paths and be sorted
+        # Should use the original files and be sorted
         assert len(lines) == 3
         assert lines[0] == "/data/sub-01_task-nback_bold.nii"  # nback comes before rest
         assert lines[1] == "/data/sub-01_task-rest_bold.nii"

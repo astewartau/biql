@@ -210,7 +210,13 @@ def main() -> int:
 
         # Format and output results
         try:
-            formatted = BIQLFormatter.format(results, format_type)
+            # Get original files for paths formatter
+            original_files = (
+                evaluator.get_original_matching_files()
+                if format_type == "paths"
+                else None
+            )
+            formatted = BIQLFormatter.format(results, format_type, original_files)
 
             if args.output:
                 # Write to file

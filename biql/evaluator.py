@@ -25,6 +25,7 @@ class BIQLEvaluator:
 
     def __init__(self, dataset: BIDSDataset):
         self.dataset = dataset
+        self._original_matching_files = []
 
     def evaluate(self, query: Query) -> List[Dict[str, Any]]:
         """Evaluate a query and return results"""
@@ -38,6 +39,9 @@ class BIQLEvaluator:
                 for f in results
                 if self._evaluate_expression(f, query.where_clause.condition)
             ]
+
+        # Store the original matching files for paths formatter
+        self._original_matching_files = results
 
         # Convert to dictionaries for further processing
         result_dicts = []
@@ -84,6 +88,10 @@ class BIQLEvaluator:
                 result_dicts = self._apply_distinct(result_dicts)
 
         return result_dicts
+
+    def get_original_matching_files(self) -> List[BIDSFile]:
+        """Get the original files that matched the WHERE clause (for paths formatter)"""
+        return self._original_matching_files
 
     def _file_to_dict(self, file: BIDSFile) -> Dict[str, Any]:
         """Convert BIDSFile to dictionary representation"""
@@ -882,26 +890,6 @@ class BIQLEvaluator:
                         # Regular non-grouped result
                         value = self._get_nested_value(result, item)
                         selected[key] = value
-
-            # Always preserve file path information for paths formatting
-            if "_group" in result:
-                # For grouped results, preserve the file paths from the group
-                selected["_file_paths"] = []
-                for file_record in result["_group"]:
-                    if "filepath" in file_record:
-                        selected["_file_paths"].append(file_record["filepath"])
-                    elif "relative_path" in file_record:
-                        selected["_file_paths"].append(file_record["relative_path"])
-                    elif "filename" in file_record:
-                        selected["_file_paths"].append(file_record["filename"])
-            else:
-                # For non-grouped results, preserve the file path
-                if "filepath" in result:
-                    selected["_file_paths"] = [result["filepath"]]
-                elif "relative_path" in result:
-                    selected["_file_paths"] = [result["relative_path"]]
-                elif "filename" in result:
-                    selected["_file_paths"] = [result["filename"]]
 
             selected_results.append(selected)
 

@@ -7,14 +7,18 @@ Formats query results in different output formats.
 import csv
 import io
 import json
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 
 class BIQLFormatter:
     """Formats query results in different output formats"""
 
     @staticmethod
-    def format(results: List[Dict], format_type: str = "json") -> str:
+    def format(
+        results: List[Dict],
+        format_type: str = "json",
+        original_files: Optional[List] = None,
+    ) -> str:
         """Format results based on specified type"""
         format_type = format_type.lower() if format_type else "json"
 
@@ -25,7 +29,7 @@ class BIQLFormatter:
         elif format_type == "csv":
             return BIQLFormatter._format_csv(results)
         elif format_type == "paths":
-            return BIQLFormatter._format_paths(results)
+            return BIQLFormatter._format_paths(results, original_files)
         elif format_type == "tsv":
             return BIQLFormatter._format_tsv(results)
         else:
@@ -164,15 +168,22 @@ class BIQLFormatter:
         return "\n".join(lines)
 
     @staticmethod
-    def _format_paths(results: List[Dict]) -> str:
+    def _format_paths(
+        results: List[Dict], original_files: Optional[List] = None
+    ) -> str:
         """Format results as file paths only - always shows actual file paths regardless of SELECT clause"""
         paths = []
-        for result in results:
-            # Use preserved file paths if available
-            if "_file_paths" in result:
-                paths.extend(str(path) for path in result["_file_paths"])
-            else:
-                # Fallback to selected fields
+
+        # If we have original files, use them directly
+        if original_files:
+            for file in original_files:
+                if hasattr(file, "filepath"):
+                    paths.append(str(file.filepath))
+                elif hasattr(file, "relative_path"):
+                    paths.append(str(file.relative_path))
+        else:
+            # Fallback to extracting paths from results
+            for result in results:
                 if "filepath" in result:
                     if isinstance(result["filepath"], list):
                         paths.extend(str(path) for path in result["filepath"])
