@@ -7,7 +7,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="biql",
-    version="0.1.0",
+    version="0.2.0",
     author="Ashley Stewart",
     description="BIDS Query Language - A powerful SQL-like query language for BIDS neuroimaging datasets",
     long_description=long_description,
