@@ -165,15 +165,32 @@ class BIQLFormatter:
 
     @staticmethod
     def _format_paths(results: List[Dict]) -> str:
-        """Format results as file paths only"""
+        """Format results as file paths only - always shows actual file paths regardless of SELECT clause"""
         paths = []
         for result in results:
-            if "filepath" in result:
-                paths.append(str(result["filepath"]))
-            elif "relative_path" in result:
-                paths.append(str(result["relative_path"]))
+            # Use preserved file paths if available
+            if "_file_paths" in result:
+                paths.extend(str(path) for path in result["_file_paths"])
+            else:
+                # Fallback to selected fields
+                if "filepath" in result:
+                    if isinstance(result["filepath"], list):
+                        paths.extend(str(path) for path in result["filepath"])
+                    else:
+                        paths.append(str(result["filepath"]))
+                elif "relative_path" in result:
+                    if isinstance(result["relative_path"], list):
+                        paths.extend(str(path) for path in result["relative_path"])
+                    else:
+                        paths.append(str(result["relative_path"]))
+                elif "filename" in result:
+                    if isinstance(result["filename"], list):
+                        paths.extend(str(filename) for filename in result["filename"])
+                    else:
+                        paths.append(str(result["filename"]))
 
-        return "\n".join(paths)
+        # Sort paths for consistent output
+        return "\n".join(sorted(paths))
 
     @staticmethod
     def _format_value_for_display(value: Any) -> str:

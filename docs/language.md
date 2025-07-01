@@ -279,47 +279,6 @@ SELECT ARRAY_AGG(filename) AS all_files
 SELECT ARRAY_AGG(filename WHERE part='mag') AS magnitude_files
 ```
 
-## Field Types
-
-### BIDS Entities
-
-Standard BIDS entities can be queried directly:
-
-- `sub` - Subject identifier
-- `ses` - Session identifier
-- `task` - Task name
-- `run` - Run number
-- `acq` - Acquisition label
-- `datatype` - Data type (func, anat, dwi, etc.)
-- `suffix` - File suffix (T1w, bold, events, etc.)
-- `part` - Part label (mag, phase for multi-part data)
-- `echo` - Echo number
-
-```sql
-WHERE sub=01 AND ses=pre AND task=rest
-```
-
-### Computed Fields
-
-- `filename` - Just the file name
-- `filepath` - Full file path
-- `relative_path` - Path relative to dataset root
-
-```sql
-SELECT filename, filepath
-```
-
-### Nested Access
-
-Access metadata from JSON sidecars or participants.tsv:
-
-- `metadata.FieldName` - Access JSON sidecar fields
-- `participants.FieldName` - Access participants.tsv columns
-
-```sql
-WHERE metadata.RepetitionTime < 2.0
-SELECT participants.age, participants.sex
-```
 
 ## Pattern Matching
 

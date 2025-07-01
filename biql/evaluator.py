@@ -715,17 +715,17 @@ class BIQLEvaluator:
                                         group_item, field_match
                                     )
 
-                                if value is not None:
-                                    if is_distinct:
-                                        # For DISTINCT, only add if not seen
-                                        if value not in seen:
-                                            values.append(value)
-                                            seen.add(value)
-                                    else:
-                                        # For non-DISTINCT, add all values
+                                if is_distinct:
+                                    # For DISTINCT, only add non-None values if not seen
+                                    if value is not None and value not in seen:
                                         values.append(value)
+                                        seen.add(value)
+                                else:
+                                    # For non-DISTINCT, add all values including None
+                                    values.append(value)
 
-                            selected[key] = sorted(values)
+                            # Sort values, putting None values at the end
+                            selected[key] = sorted(values, key=lambda x: (x is None, x))
                     else:
                         # Single row - return as single-item array
                         field_match = item[10:-1]  # Remove "ARRAY_AGG(" and ")"
@@ -753,6 +753,71 @@ class BIQLEvaluator:
                                 )
                             else:
                                 value = self._get_nested_value(result, field_match)
+                            selected[key] = [value] if value is not None else []
+
+                elif item.startswith("(") and item.endswith(")"):
+                    # Handle parenthesized expressions for implicit aggregation
+                    key = alias if alias else "array"
+
+                    # Parse the parenthesized expression
+                    inner = item[1:-1]  # Remove outer parentheses
+
+                    # Check for DISTINCT
+                    is_distinct = False
+                    condition_str = None
+                    field_name = inner
+
+                    if inner.startswith("DISTINCT "):
+                        is_distinct = True
+                        inner = inner[9:]  # Remove "DISTINCT "
+                        field_name = inner
+
+                    # Check for WHERE clause
+                    if " WHERE " in inner:
+                        parts = inner.split(" WHERE ", 1)
+                        field_name = parts[0].strip()
+                        condition_str = parts[1].strip()
+
+                        # Remove DISTINCT from field_name if it's there
+                        if field_name.startswith("DISTINCT "):
+                            is_distinct = True
+                            field_name = field_name[9:]
+
+                    if "_group" in result:
+                        # Grouped results - collect array from group
+                        values = []
+                        seen = set()
+
+                        for group_item in result["_group"]:
+                            # Check condition if present
+                            if (
+                                condition_str
+                                and not self._evaluate_array_agg_condition(
+                                    group_item, condition_str
+                                )
+                            ):
+                                continue
+
+                            value = self._get_nested_value(group_item, field_name)
+                            if is_distinct:
+                                # For DISTINCT, only add non-None values if not seen
+                                if value is not None and value not in seen:
+                                    values.append(value)
+                                    seen.add(value)
+                            else:
+                                # For non-DISTINCT, add all values including None
+                                values.append(value)
+
+                        # Sort values, putting None values at the end
+                        selected[key] = sorted(values, key=lambda x: (x is None, x))
+                    else:
+                        # Single row - return as single-item array if condition matches
+                        if condition_str and not self._evaluate_array_agg_condition(
+                            result, condition_str
+                        ):
+                            selected[key] = []
+                        else:
+                            value = self._get_nested_value(result, field_name)
                             selected[key] = [value] if value is not None else []
 
                 elif item.startswith(("AVG(", "MAX(", "MIN(", "SUM(")):
@@ -795,26 +860,48 @@ class BIQLEvaluator:
 
                     # If grouped result, aggregate non-grouped fields into arrays
                     if "_group" in result:
-                        # Collect all unique values for this field from the group
-                        values = []
-                        seen = set()
-                        for group_item in result["_group"]:
-                            value = self._get_nested_value(group_item, item)
-                            if value is not None and value not in seen:
-                                values.append(value)
-                                seen.add(value)
-
-                        # Single values: string; multiple values: array (sorted)
-                        if len(values) == 1:
-                            selected[key] = values[0]
-                        elif len(values) > 1:
-                            selected[key] = sorted(values)
+                        # Check if this field is a grouping field
+                        if (
+                            item in result
+                            and item != "_count"
+                            and item != "_group"
+                            and item != "_aggregates"
+                        ):
+                            # This is a GROUP BY field, use the single grouped value
+                            selected[key] = result[item]
                         else:
-                            selected[key] = None
+                            # This is not a GROUP BY field, collect all values (including duplicates and None)
+                            values = []
+                            for group_item in result["_group"]:
+                                value = self._get_nested_value(group_item, item)
+                                values.append(value)
+
+                            # Sort values, putting None values at the end
+                            selected[key] = sorted(values, key=lambda x: (x is None, x))
                     else:
                         # Regular non-grouped result
                         value = self._get_nested_value(result, item)
                         selected[key] = value
+
+            # Always preserve file path information for paths formatting
+            if "_group" in result:
+                # For grouped results, preserve the file paths from the group
+                selected["_file_paths"] = []
+                for file_record in result["_group"]:
+                    if "filepath" in file_record:
+                        selected["_file_paths"].append(file_record["filepath"])
+                    elif "relative_path" in file_record:
+                        selected["_file_paths"].append(file_record["relative_path"])
+                    elif "filename" in file_record:
+                        selected["_file_paths"].append(file_record["filename"])
+            else:
+                # For non-grouped results, preserve the file path
+                if "filepath" in result:
+                    selected["_file_paths"] = [result["filepath"]]
+                elif "relative_path" in result:
+                    selected["_file_paths"] = [result["relative_path"]]
+                elif "filename" in result:
+                    selected["_file_paths"] = [result["filename"]]
 
             selected_results.append(selected)
 
@@ -830,13 +917,16 @@ class BIQLEvaluator:
         distinct_results = []
 
         for result in results:
-            # Create a hashable key from the result dict
+            # Create a hashable key from the result dict, excluding internal fields
             # Sort items to ensure consistent ordering
             try:
                 key = tuple(
                     sorted(
                         (k, tuple(v) if isinstance(v, list) else v)
                         for k, v in result.items()
+                        if not k.startswith(
+                            "_"
+                        )  # Exclude internal fields like _file_paths
                     )
                 )
 
@@ -845,7 +935,10 @@ class BIQLEvaluator:
                     distinct_results.append(result)
             except TypeError:
                 # If values aren't hashable, fall back to string comparison
-                key = str(sorted(result.items()))
+                filtered_items = [
+                    (k, v) for k, v in result.items() if not k.startswith("_")
+                ]
+                key = str(sorted(filtered_items))
                 if key not in seen:
                     seen.add(key)
                     distinct_results.append(result)

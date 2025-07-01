@@ -803,6 +803,164 @@ class TestBIQLEvaluator:
                 assert isinstance(result["echo1_files"], list)
                 assert isinstance(result["echo2_files"], list)
 
+    def test_parenthesized_distinct_syntax(self, evaluator):
+        """Test new (DISTINCT field) syntax"""
+        parser = BIQLParser.from_string(
+            "SELECT sub, (DISTINCT task) as tasks, COUNT(*) as total_files GROUP BY sub"
+        )
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+
+        for result in results:
+            assert "tasks" in result
+            assert "total_files" in result
+            assert isinstance(result["tasks"], list)
+            assert isinstance(result["total_files"], int)
+
+            # Each subject should have unique tasks only
+            tasks = result["tasks"]
+            assert len(tasks) == len(set(tasks)), "DISTINCT should remove duplicates"
+
+            # Should have the basic tasks
+            for task in tasks:
+                assert task in [None, "rest", "nback", "stroop"]
+
+    def test_parenthesized_non_distinct_syntax(self, evaluator):
+        """Test new (field) syntax without DISTINCT - should include duplicates"""
+        parser = BIQLParser.from_string(
+            "SELECT sub, (task) as all_tasks, COUNT(*) as total_files WHERE sub='01' GROUP BY sub"
+        )
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+
+        assert len(results) == 1
+        result = results[0]
+
+        assert "all_tasks" in result
+        assert "total_files" in result
+        assert isinstance(result["all_tasks"], list)
+        assert isinstance(result["total_files"], int)
+
+        # Without DISTINCT, should include duplicates
+        all_tasks = result["all_tasks"]
+        total_files = result["total_files"]
+
+        # The number of tasks should equal the total files (each file has a task)
+        assert (
+            len(all_tasks) == total_files
+        ), f"Expected {total_files} tasks, got {len(all_tasks)}"
+
+        # Should contain duplicates
+        unique_tasks = list(set(all_tasks))
+        assert len(unique_tasks) < len(
+            all_tasks
+        ), "Non-DISTINCT should contain duplicates"
+
+    def test_parenthesized_where_condition_syntax(self, evaluator):
+        """Test new (field WHERE condition) syntax"""
+        parser = BIQLParser.from_string(
+            "SELECT sub, (filename WHERE suffix='bold') as bold_files GROUP BY sub"
+        )
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+
+        for result in results:
+            assert "bold_files" in result
+            assert isinstance(result["bold_files"], list)
+
+            # All filenames should contain 'bold'
+            for filename in result["bold_files"]:
+                assert "bold" in filename
+
+    def test_parenthesized_distinct_where_syntax(self, evaluator):
+        """Test new (DISTINCT field WHERE condition) syntax"""
+        parser = BIQLParser.from_string(
+            "SELECT sub, (DISTINCT datatype WHERE datatype IS NOT NULL) as datatypes GROUP BY sub"
+        )
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+
+        for result in results:
+            assert "datatypes" in result
+            assert isinstance(result["datatypes"], list)
+
+            # Should only contain unique datatypes
+            datatypes = result["datatypes"]
+            assert len(datatypes) == len(
+                set(datatypes)
+            ), "DISTINCT should remove duplicates"
+
+            # Should not contain None values due to WHERE condition
+            assert None not in datatypes
+
+    def test_parenthesized_vs_array_agg_equivalence(self, evaluator):
+        """Test that new syntax is equivalent to ARRAY_AGG"""
+        # Test DISTINCT equivalence
+        parser1 = BIQLParser.from_string(
+            "SELECT sub, (DISTINCT task) as tasks GROUP BY sub"
+        )
+        query1 = parser1.parse()
+        results1 = evaluator.evaluate(query1)
+
+        parser2 = BIQLParser.from_string(
+            "SELECT sub, ARRAY_AGG(DISTINCT task) as tasks GROUP BY sub"
+        )
+        query2 = parser2.parse()
+        results2 = evaluator.evaluate(query2)
+
+        # Sort results by sub for comparison
+        results1.sort(key=lambda x: x["sub"])
+        results2.sort(key=lambda x: x["sub"])
+
+        assert len(results1) == len(results2)
+        for r1, r2 in zip(results1, results2):
+            assert r1["sub"] == r2["sub"]
+            assert sorted(r1["tasks"]) == sorted(r2["tasks"])
+
+    def test_parenthesized_duplicates_count_consistency(self, evaluator):
+        """Test that non-DISTINCT arrays have consistent counts"""
+        parser = BIQLParser.from_string(
+            "SELECT sub, (task) as all_tasks, (datatype) as all_datatypes, COUNT(*) as total "
+            "WHERE sub IN ['01', '02'] GROUP BY sub"
+        )
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+
+        for result in results:
+            all_tasks = result["all_tasks"]
+            all_datatypes = result["all_datatypes"]
+            total = result["total"]
+
+            # All arrays should have the same length as COUNT(*)
+            assert (
+                len(all_tasks) == total
+            ), f"Task array length {len(all_tasks)} != total {total}"
+            assert (
+                len(all_datatypes) == total
+            ), f"Datatype array length {len(all_datatypes)} != total {total}"
+
+    def test_array_agg_duplicates_count_consistency(self, evaluator):
+        """Test that ARRAY_AGG without DISTINCT includes all values and matches COUNT(*)"""
+        parser = BIQLParser.from_string(
+            "SELECT sub, ARRAY_AGG(task) as tasks, COUNT(*) as total_files "
+            "WHERE sub IN ['01', '02', '03'] "
+            "GROUP BY sub"
+        )
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+
+        for result in results:
+            # The number of items in the non-DISTINCT array should match COUNT(*)
+            assert (
+                len(result["tasks"]) == result["total_files"]
+            ), f"Subject {result['sub']}: {len(result['tasks'])} tasks != {result['total_files']} files"
+
+            # Check that None values are included
+            none_count = result["tasks"].count(None)
+            assert (
+                none_count > 0
+            ), f"Subject {result['sub']}: No None values found in tasks array"
+
     def test_format_clause_in_query(self, evaluator):
         """Test FORMAT clause within queries"""
         # Test with json format
@@ -969,9 +1127,39 @@ class TestBIQLEvaluator:
                 if "datatype" in result and isinstance(result["datatype"], list):
                     # Found a subject with multiple datatypes
                     assert len(result["datatype"]) > 1
-                    # All items should be strings
-                    assert all(isinstance(dt, str) for dt in result["datatype"])
+                    # Items can be strings or None
+                    assert all(
+                        isinstance(dt, (str, type(None))) for dt in result["datatype"]
+                    )
                     break
+
+    def test_group_by_non_distinct_auto_aggregation(self, evaluator):
+        """Test that non-grouped fields include all values including duplicates and None"""
+        parser = BIQLParser.from_string(
+            "SELECT sub, task, COUNT(*) as total " "WHERE sub='01' GROUP BY sub"
+        )
+        query = parser.parse()
+        results = evaluator.evaluate(query)
+
+        assert len(results) == 1
+        result = results[0]
+
+        # Task should be an array with all values (including duplicates and None)
+        assert isinstance(result["task"], list)
+        assert len(result["task"]) == result["total"]
+
+        # Should include None values
+        none_count = result["task"].count(None)
+        assert none_count > 0
+
+        # Should include duplicates
+        task_counts = {}
+        for task in result["task"]:
+            if task is not None:
+                task_counts[task] = task_counts.get(task, 0) + 1
+
+        # At least one task should appear more than once
+        assert any(count > 1 for count in task_counts.values())
 
     def test_group_by_preserves_null_handling(self, evaluator):
         """Test that None values are handled correctly in auto-aggregation"""
@@ -1994,7 +2182,54 @@ class TestBIQLFormatter:
 
         # Paths format might return empty for results without filepath/relative_path
         paths_formatted = BIQLFormatter.format(results, "paths")
-        assert isinstance(paths_formatted, str)
+
+    def test_paths_formatting_grouped_results(self):
+        """Test paths formatting with grouped results (arrays)"""
+        grouped_results = [
+            {
+                "sub": "01",
+                "filename": ["sub-01_task-rest_bold.nii", "sub-01_task-nback_bold.nii"],
+            },
+            {
+                "sub": "02",
+                "filepath": [
+                    "/data/sub-02_task-rest_bold.nii",
+                    "/data/sub-02_task-nback_bold.nii",
+                ],
+            },
+        ]
+
+        paths_output = BIQLFormatter.format(grouped_results, "paths")
+        lines = paths_output.strip().split("\n")
+
+        # Should extract all filenames/filepaths from arrays
+        assert len(lines) == 4
+        assert "sub-01_task-rest_bold.nii" in lines
+        assert "sub-01_task-nback_bold.nii" in lines
+        assert "/data/sub-02_task-rest_bold.nii" in lines
+        assert "/data/sub-02_task-nback_bold.nii" in lines
+
+    def test_paths_formatting_with_preserved_paths(self):
+        """Test paths formatting uses preserved file paths regardless of selected fields"""
+        results_with_preserved_paths = [
+            {
+                "sub": "01",
+                "_file_paths": [
+                    "/data/sub-01_task-rest_bold.nii",
+                    "/data/sub-01_task-nback_bold.nii",
+                ],
+            },
+            {"task": "rest", "_file_paths": ["/data/sub-02_task-rest_bold.nii"]},
+        ]
+
+        paths_output = BIQLFormatter.format(results_with_preserved_paths, "paths")
+        lines = paths_output.strip().split("\n")
+
+        # Should use the preserved file paths and be sorted
+        assert len(lines) == 3
+        assert lines[0] == "/data/sub-01_task-nback_bold.nii"  # nback comes before rest
+        assert lines[1] == "/data/sub-01_task-rest_bold.nii"
+        assert lines[2] == "/data/sub-02_task-rest_bold.nii"
 
 
 class TestIntegration:
