@@ -5,6 +5,7 @@ Tests all components of the BIQL implementation using real BIDS examples.
 """
 
 import json
+import os
 import tempfile
 from pathlib import Path
 
@@ -1523,7 +1524,9 @@ class TestBIQLEvaluator:
         for result in results:
             filepath = result.get("filepath")
             assert filepath is not None
-            if "/func/" in filepath:
+            # Use os.sep to be platform-agnostic
+            func_pattern = f"{os.sep}func{os.sep}"
+            if func_pattern in filepath:
                 func_count += 1
 
         # All results should be func files
