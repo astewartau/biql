@@ -241,19 +241,16 @@ q.run_query("SELECT DISTINCT task WHERE datatype=func", format="dataframe")
     <tr style="text-align: right;">
       <th></th>
       <th>task</th>
-      <th>_file_paths</th>
     </tr>
   </thead>
   <tbody>
     <tr>
       <th>0</th>
       <td>nback</td>
-      <td>/tmp/bids-examples/synthetic/sub-01/ses-02/fun...</td>
     </tr>
     <tr>
       <th>1</th>
       <td>rest</td>
-      <td>/tmp/bids-examples/synthetic/sub-01/ses-02/fun...</td>
     </tr>
   </tbody>
 </table>
@@ -647,7 +644,7 @@ By default, BIQL returns all available fields. Use SELECT to choose specific fie
 q.run_query(
     "SELECT sub, task, run, filename WHERE datatype=func",
     format="dataframe"
-)
+).head(5)
 ```
 
 
@@ -675,7 +672,6 @@ q.run_query(
       <th>task</th>
       <th>run</th>
       <th>filename</th>
-      <th>_file_paths</th>
     </tr>
   </thead>
   <tbody>
@@ -685,7 +681,6 @@ q.run_query(
       <td>nback</td>
       <td>02</td>
       <td>sub-01_ses-02_task-nback_run-02_bold.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-01/ses-02/fun...</td>
     </tr>
     <tr>
       <th>1</th>
@@ -693,7 +688,6 @@ q.run_query(
       <td>nback</td>
       <td>01</td>
       <td>sub-01_ses-02_task-nback_run-01_bold.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-01/ses-02/fun...</td>
     </tr>
     <tr>
       <th>2</th>
@@ -701,7 +695,6 @@ q.run_query(
       <td>rest</td>
       <td>None</td>
       <td>sub-01_ses-02_task-rest_bold.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-01/ses-02/fun...</td>
     </tr>
     <tr>
       <th>3</th>
@@ -709,7 +702,6 @@ q.run_query(
       <td>nback</td>
       <td>02</td>
       <td>sub-01_ses-01_task-nback_run-02_bold.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-01/ses-01/fun...</td>
     </tr>
     <tr>
       <th>4</th>
@@ -717,207 +709,6 @@ q.run_query(
       <td>rest</td>
       <td>None</td>
       <td>sub-01_ses-01_task-rest_bold.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-01/ses-01/fun...</td>
-    </tr>
-    <tr>
-      <th>5</th>
-      <td>01</td>
-      <td>nback</td>
-      <td>01</td>
-      <td>sub-01_ses-01_task-nback_run-01_bold.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-01/ses-01/fun...</td>
-    </tr>
-    <tr>
-      <th>6</th>
-      <td>04</td>
-      <td>nback</td>
-      <td>02</td>
-      <td>sub-04_ses-02_task-nback_run-02_bold.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-04/ses-02/fun...</td>
-    </tr>
-    <tr>
-      <th>7</th>
-      <td>04</td>
-      <td>nback</td>
-      <td>01</td>
-      <td>sub-04_ses-02_task-nback_run-01_bold.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-04/ses-02/fun...</td>
-    </tr>
-    <tr>
-      <th>8</th>
-      <td>04</td>
-      <td>rest</td>
-      <td>None</td>
-      <td>sub-04_ses-02_task-rest_bold.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-04/ses-02/fun...</td>
-    </tr>
-    <tr>
-      <th>9</th>
-      <td>04</td>
-      <td>nback</td>
-      <td>02</td>
-      <td>sub-04_ses-01_task-nback_run-02_bold.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-04/ses-01/fun...</td>
-    </tr>
-    <tr>
-      <th>10</th>
-      <td>04</td>
-      <td>rest</td>
-      <td>None</td>
-      <td>sub-04_ses-01_task-rest_bold.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-04/ses-01/fun...</td>
-    </tr>
-    <tr>
-      <th>11</th>
-      <td>04</td>
-      <td>nback</td>
-      <td>01</td>
-      <td>sub-04_ses-01_task-nback_run-01_bold.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-04/ses-01/fun...</td>
-    </tr>
-    <tr>
-      <th>12</th>
-      <td>05</td>
-      <td>rest</td>
-      <td>None</td>
-      <td>sub-05_ses-02_task-rest_bold.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-05/ses-02/fun...</td>
-    </tr>
-    <tr>
-      <th>13</th>
-      <td>05</td>
-      <td>nback</td>
-      <td>02</td>
-      <td>sub-05_ses-02_task-nback_run-02_bold.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-05/ses-02/fun...</td>
-    </tr>
-    <tr>
-      <th>14</th>
-      <td>05</td>
-      <td>nback</td>
-      <td>01</td>
-      <td>sub-05_ses-02_task-nback_run-01_bold.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-05/ses-02/fun...</td>
-    </tr>
-    <tr>
-      <th>15</th>
-      <td>05</td>
-      <td>nback</td>
-      <td>02</td>
-      <td>sub-05_ses-01_task-nback_run-02_bold.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-05/ses-01/fun...</td>
-    </tr>
-    <tr>
-      <th>16</th>
-      <td>05</td>
-      <td>rest</td>
-      <td>None</td>
-      <td>sub-05_ses-01_task-rest_bold.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-05/ses-01/fun...</td>
-    </tr>
-    <tr>
-      <th>17</th>
-      <td>05</td>
-      <td>nback</td>
-      <td>01</td>
-      <td>sub-05_ses-01_task-nback_run-01_bold.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-05/ses-01/fun...</td>
-    </tr>
-    <tr>
-      <th>18</th>
-      <td>02</td>
-      <td>rest</td>
-      <td>None</td>
-      <td>sub-02_ses-02_task-rest_bold.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-02/ses-02/fun...</td>
-    </tr>
-    <tr>
-      <th>19</th>
-      <td>02</td>
-      <td>nback</td>
-      <td>02</td>
-      <td>sub-02_ses-02_task-nback_run-02_bold.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-02/ses-02/fun...</td>
-    </tr>
-    <tr>
-      <th>20</th>
-      <td>02</td>
-      <td>nback</td>
-      <td>01</td>
-      <td>sub-02_ses-02_task-nback_run-01_bold.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-02/ses-02/fun...</td>
-    </tr>
-    <tr>
-      <th>21</th>
-      <td>02</td>
-      <td>nback</td>
-      <td>02</td>
-      <td>sub-02_ses-01_task-nback_run-02_bold.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-02/ses-01/fun...</td>
-    </tr>
-    <tr>
-      <th>22</th>
-      <td>02</td>
-      <td>nback</td>
-      <td>01</td>
-      <td>sub-02_ses-01_task-nback_run-01_bold.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-02/ses-01/fun...</td>
-    </tr>
-    <tr>
-      <th>23</th>
-      <td>02</td>
-      <td>rest</td>
-      <td>None</td>
-      <td>sub-02_ses-01_task-rest_bold.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-02/ses-01/fun...</td>
-    </tr>
-    <tr>
-      <th>24</th>
-      <td>03</td>
-      <td>nback</td>
-      <td>01</td>
-      <td>sub-03_ses-02_task-nback_run-01_bold.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-03/ses-02/fun...</td>
-    </tr>
-    <tr>
-      <th>25</th>
-      <td>03</td>
-      <td>nback</td>
-      <td>02</td>
-      <td>sub-03_ses-02_task-nback_run-02_bold.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-03/ses-02/fun...</td>
-    </tr>
-    <tr>
-      <th>26</th>
-      <td>03</td>
-      <td>rest</td>
-      <td>None</td>
-      <td>sub-03_ses-02_task-rest_bold.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-03/ses-02/fun...</td>
-    </tr>
-    <tr>
-      <th>27</th>
-      <td>03</td>
-      <td>rest</td>
-      <td>None</td>
-      <td>sub-03_ses-01_task-rest_bold.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-03/ses-01/fun...</td>
-    </tr>
-    <tr>
-      <th>28</th>
-      <td>03</td>
-      <td>nback</td>
-      <td>02</td>
-      <td>sub-03_ses-01_task-nback_run-02_bold.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-03/ses-01/fun...</td>
-    </tr>
-    <tr>
-      <th>29</th>
-      <td>03</td>
-      <td>nback</td>
-      <td>01</td>
-      <td>sub-03_ses-01_task-nback_run-01_bold.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-03/ses-01/fun...</td>
     </tr>
   </tbody>
 </table>
@@ -956,7 +747,6 @@ q.run_query(
       <th></th>
       <th>sub</th>
       <th>relative_path</th>
-      <th>_file_paths</th>
     </tr>
   </thead>
   <tbody>
@@ -964,61 +754,51 @@ q.run_query(
       <th>0</th>
       <td>01</td>
       <td>sub-01/ses-02/anat/sub-01_ses-02_T1w.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-01/ses-02/ana...</td>
     </tr>
     <tr>
       <th>1</th>
       <td>01</td>
       <td>sub-01/ses-01/anat/sub-01_ses-01_T1w.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-01/ses-01/ana...</td>
     </tr>
     <tr>
       <th>2</th>
       <td>04</td>
       <td>sub-04/ses-02/anat/sub-04_ses-02_T1w.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-04/ses-02/ana...</td>
     </tr>
     <tr>
       <th>3</th>
       <td>04</td>
       <td>sub-04/ses-01/anat/sub-04_ses-01_T1w.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-04/ses-01/ana...</td>
     </tr>
     <tr>
       <th>4</th>
       <td>05</td>
       <td>sub-05/ses-02/anat/sub-05_ses-02_T1w.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-05/ses-02/ana...</td>
     </tr>
     <tr>
       <th>5</th>
       <td>05</td>
       <td>sub-05/ses-01/anat/sub-05_ses-01_T1w.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-05/ses-01/ana...</td>
     </tr>
     <tr>
       <th>6</th>
       <td>02</td>
       <td>sub-02/ses-02/anat/sub-02_ses-02_T1w.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-02/ses-02/ana...</td>
     </tr>
     <tr>
       <th>7</th>
       <td>02</td>
       <td>sub-02/ses-01/anat/sub-02_ses-01_T1w.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-02/ses-01/ana...</td>
     </tr>
     <tr>
       <th>8</th>
       <td>03</td>
       <td>sub-03/ses-02/anat/sub-03_ses-02_T1w.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-03/ses-02/ana...</td>
     </tr>
     <tr>
       <th>9</th>
       <td>03</td>
       <td>sub-03/ses-01/anat/sub-03_ses-01_T1w.nii</td>
-      <td>/tmp/bids-examples/synthetic/sub-03/ses-01/ana...</td>
     </tr>
   </tbody>
 </table>
@@ -1073,14 +853,12 @@ q.run_query(
     <tr style="text-align: right;">
       <th></th>
       <th>task</th>
-      <th>_file_paths</th>
     </tr>
   </thead>
   <tbody>
     <tr>
       <th>0</th>
       <td>nback</td>
-      <td>/tmp/bids-examples/synthetic/sub-01/ses-02/fun...</td>
     </tr>
   </tbody>
 </table>
@@ -1114,51 +892,9 @@ q.run_query(
 
 
 
-    [{'sub': '01',
-      'tasks': ['nback', 'rest', 'stroop'],
-      'total_files': 12,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-01/ses-02/anat/sub-01_ses-02_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-02/func/sub-01_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-02/func/sub-01_ses-02_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-02/func/sub-01_ses-02_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-01/anat/sub-01_ses-01_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-01/func/sub-01_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-01/func/sub-01_ses-01_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-01/func/sub-01_ses-01_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/sub-01_sessions.tsv',
-       '/tmp/bids-examples/synthetic/sub-01/ses-02/sub-01_ses-02_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-01/ses-01/sub-01_ses-01_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-01/ses-01/beh/sub-01_ses-01_task-stroop_beh.tsv']},
-     {'sub': '02',
-      'tasks': ['nback', 'rest', 'stroop'],
-      'total_files': 12,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-02/ses-02/anat/sub-02_ses-02_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-02/func/sub-02_ses-02_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-02/func/sub-02_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-02/func/sub-02_ses-02_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/anat/sub-02_ses-01_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/func/sub-02_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/func/sub-02_ses-01_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/func/sub-02_ses-01_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/sub-02_sessions.tsv',
-       '/tmp/bids-examples/synthetic/sub-02/ses-02/sub-02_ses-02_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/sub-02_ses-01_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/beh/sub-02_ses-01_task-stroop_beh.tsv']},
-     {'sub': '03',
-      'tasks': ['nback', 'rest', 'stroop'],
-      'total_files': 12,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-03/ses-02/anat/sub-03_ses-02_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-02/func/sub-03_ses-02_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-02/func/sub-03_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-02/func/sub-03_ses-02_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/anat/sub-03_ses-01_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/func/sub-03_ses-01_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/func/sub-03_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/func/sub-03_ses-01_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/sub-03_sessions.tsv',
-       '/tmp/bids-examples/synthetic/sub-03/ses-02/sub-03_ses-02_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/sub-03_ses-01_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/beh/sub-03_ses-01_task-stroop_beh.tsv']}]
+    [{'sub': '01', 'tasks': ['nback', 'rest', 'stroop'], 'total_files': 12},
+     {'sub': '02', 'tasks': ['nback', 'rest', 'stroop'], 'total_files': 12},
+     {'sub': '03', 'tasks': ['nback', 'rest', 'stroop'], 'total_files': 12}]
 
 
 
@@ -1199,7 +935,6 @@ q.run_query(
       <th>run</th>
       <th>file_count</th>
       <th>subjects</th>
-      <th>_file_paths</th>
     </tr>
   </thead>
   <tbody>
@@ -1209,7 +944,6 @@ q.run_query(
       <td>01</td>
       <td>10</td>
       <td>5</td>
-      <td>/tmp/bids-examples/synthetic/sub-01/ses-02/fun...</td>
     </tr>
     <tr>
       <th>1</th>
@@ -1217,7 +951,6 @@ q.run_query(
       <td>02</td>
       <td>10</td>
       <td>5</td>
-      <td>/tmp/bids-examples/synthetic/sub-01/ses-02/fun...</td>
     </tr>
     <tr>
       <th>2</th>
@@ -1225,7 +958,6 @@ q.run_query(
       <td>None</td>
       <td>10</td>
       <td>5</td>
-      <td>/tmp/bids-examples/synthetic/sub-01/ses-02/fun...</td>
     </tr>
   </tbody>
 </table>
@@ -1265,7 +997,6 @@ q.run_query("SELECT sub, COUNT(*) GROUP BY sub", format="dataframe")
       <th></th>
       <th>sub</th>
       <th>count</th>
-      <th>_file_paths</th>
     </tr>
   </thead>
   <tbody>
@@ -1273,31 +1004,26 @@ q.run_query("SELECT sub, COUNT(*) GROUP BY sub", format="dataframe")
       <th>0</th>
       <td>01</td>
       <td>12</td>
-      <td>/tmp/bids-examples/synthetic/sub-01/ses-02/ana...</td>
     </tr>
     <tr>
       <th>1</th>
       <td>04</td>
       <td>12</td>
-      <td>/tmp/bids-examples/synthetic/sub-04/ses-02/ana...</td>
     </tr>
     <tr>
       <th>2</th>
       <td>05</td>
       <td>12</td>
-      <td>/tmp/bids-examples/synthetic/sub-05/ses-02/ana...</td>
     </tr>
     <tr>
       <th>3</th>
       <td>02</td>
       <td>12</td>
-      <td>/tmp/bids-examples/synthetic/sub-02/ses-02/ana...</td>
     </tr>
     <tr>
       <th>4</th>
       <td>03</td>
       <td>12</td>
-      <td>/tmp/bids-examples/synthetic/sub-03/ses-02/ana...</td>
     </tr>
   </tbody>
 </table>
@@ -1316,126 +1042,26 @@ q.run_query(
 
 
 
-    [{'sub': '01',
-      'datatype': 'anat',
-      'count': 2,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-01/ses-02/anat/sub-01_ses-02_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-01/anat/sub-01_ses-01_T1w.nii']},
-     {'sub': '01',
-      'datatype': 'func',
-      'count': 6,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-01/ses-02/func/sub-01_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-02/func/sub-01_ses-02_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-02/func/sub-01_ses-02_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-01/func/sub-01_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-01/func/sub-01_ses-01_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-01/func/sub-01_ses-01_task-nback_run-01_bold.nii']},
-     {'sub': '04',
-      'datatype': 'anat',
-      'count': 2,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-04/ses-02/anat/sub-04_ses-02_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-01/anat/sub-04_ses-01_T1w.nii']},
-     {'sub': '04',
-      'datatype': 'func',
-      'count': 6,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-04/ses-02/func/sub-04_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-02/func/sub-04_ses-02_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-02/func/sub-04_ses-02_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-01/func/sub-04_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-01/func/sub-04_ses-01_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-01/func/sub-04_ses-01_task-nback_run-01_bold.nii']},
-     {'sub': '05',
-      'datatype': 'anat',
-      'count': 2,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-05/ses-02/anat/sub-05_ses-02_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-01/anat/sub-05_ses-01_T1w.nii']},
-     {'sub': '05',
-      'datatype': 'func',
-      'count': 6,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-05/ses-02/func/sub-05_ses-02_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-02/func/sub-05_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-02/func/sub-05_ses-02_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-01/func/sub-05_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-01/func/sub-05_ses-01_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-01/func/sub-05_ses-01_task-nback_run-01_bold.nii']},
-     {'sub': '02',
-      'datatype': 'anat',
-      'count': 2,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-02/ses-02/anat/sub-02_ses-02_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/anat/sub-02_ses-01_T1w.nii']},
-     {'sub': '02',
-      'datatype': 'func',
-      'count': 6,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-02/ses-02/func/sub-02_ses-02_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-02/func/sub-02_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-02/func/sub-02_ses-02_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/func/sub-02_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/func/sub-02_ses-01_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/func/sub-02_ses-01_task-rest_bold.nii']},
-     {'sub': '03',
-      'datatype': 'anat',
-      'count': 2,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-03/ses-02/anat/sub-03_ses-02_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/anat/sub-03_ses-01_T1w.nii']},
-     {'sub': '03',
-      'datatype': 'func',
-      'count': 6,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-03/ses-02/func/sub-03_ses-02_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-02/func/sub-03_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-02/func/sub-03_ses-02_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/func/sub-03_ses-01_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/func/sub-03_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/func/sub-03_ses-01_task-nback_run-01_bold.nii']},
-     {'sub': '01',
-      'datatype': None,
-      'count': 3,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-01/sub-01_sessions.tsv',
-       '/tmp/bids-examples/synthetic/sub-01/ses-02/sub-01_ses-02_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-01/ses-01/sub-01_ses-01_scans.tsv']},
-     {'sub': '01',
-      'datatype': 'beh',
-      'count': 1,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-01/ses-01/beh/sub-01_ses-01_task-stroop_beh.tsv']},
-     {'sub': '04',
-      'datatype': None,
-      'count': 3,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-04/sub-04_sessions.tsv',
-       '/tmp/bids-examples/synthetic/sub-04/ses-02/sub-04_ses-02_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-04/ses-01/sub-04_ses-01_scans.tsv']},
-     {'sub': '04',
-      'datatype': 'beh',
-      'count': 1,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-04/ses-01/beh/sub-04_ses-01_task-stroop_beh.tsv']},
-     {'sub': '05',
-      'datatype': None,
-      'count': 3,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-05/sub-05_sessions.tsv',
-       '/tmp/bids-examples/synthetic/sub-05/ses-02/sub-05_ses-02_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-05/ses-01/sub-05_ses-01_scans.tsv']},
-     {'sub': '05',
-      'datatype': 'beh',
-      'count': 1,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-05/ses-01/beh/sub-05_ses-01_task-stroop_beh.tsv']},
-     {'sub': '02',
-      'datatype': None,
-      'count': 3,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-02/sub-02_sessions.tsv',
-       '/tmp/bids-examples/synthetic/sub-02/ses-02/sub-02_ses-02_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/sub-02_ses-01_scans.tsv']},
-     {'sub': '02',
-      'datatype': 'beh',
-      'count': 1,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-02/ses-01/beh/sub-02_ses-01_task-stroop_beh.tsv']},
-     {'sub': '03',
-      'datatype': None,
-      'count': 3,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-03/sub-03_sessions.tsv',
-       '/tmp/bids-examples/synthetic/sub-03/ses-02/sub-03_ses-02_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/sub-03_ses-01_scans.tsv']},
-     {'sub': '03',
-      'datatype': 'beh',
-      'count': 1,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-03/ses-01/beh/sub-03_ses-01_task-stroop_beh.tsv']}]
+    [{'sub': '01', 'datatype': 'anat', 'count': 2},
+     {'sub': '01', 'datatype': 'func', 'count': 6},
+     {'sub': '04', 'datatype': 'anat', 'count': 2},
+     {'sub': '04', 'datatype': 'func', 'count': 6},
+     {'sub': '05', 'datatype': 'anat', 'count': 2},
+     {'sub': '05', 'datatype': 'func', 'count': 6},
+     {'sub': '02', 'datatype': 'anat', 'count': 2},
+     {'sub': '02', 'datatype': 'func', 'count': 6},
+     {'sub': '03', 'datatype': 'anat', 'count': 2},
+     {'sub': '03', 'datatype': 'func', 'count': 6},
+     {'sub': '01', 'datatype': None, 'count': 3},
+     {'sub': '01', 'datatype': 'beh', 'count': 1},
+     {'sub': '04', 'datatype': None, 'count': 3},
+     {'sub': '04', 'datatype': 'beh', 'count': 1},
+     {'sub': '05', 'datatype': None, 'count': 3},
+     {'sub': '05', 'datatype': 'beh', 'count': 1},
+     {'sub': '02', 'datatype': None, 'count': 3},
+     {'sub': '02', 'datatype': 'beh', 'count': 1},
+     {'sub': '03', 'datatype': None, 'count': 3},
+     {'sub': '03', 'datatype': 'beh', 'count': 1}]
 
 
 
@@ -1461,79 +1087,19 @@ q.run_query(
     [{'task': None,
       'file_count': 25,
       'subjects_with_task': ['01', '02', '03', '04', '05'],
-      'datatypes': ['anat'],
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-01/ses-02/anat/sub-01_ses-02_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-01/anat/sub-01_ses-01_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-02/anat/sub-04_ses-02_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-01/anat/sub-04_ses-01_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-02/anat/sub-05_ses-02_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-01/anat/sub-05_ses-01_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-02/anat/sub-02_ses-02_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/anat/sub-02_ses-01_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-02/anat/sub-03_ses-02_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/anat/sub-03_ses-01_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-01/sub-01_sessions.tsv',
-       '/tmp/bids-examples/synthetic/sub-01/ses-02/sub-01_ses-02_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-01/ses-01/sub-01_ses-01_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-04/sub-04_sessions.tsv',
-       '/tmp/bids-examples/synthetic/sub-04/ses-02/sub-04_ses-02_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-04/ses-01/sub-04_ses-01_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-05/sub-05_sessions.tsv',
-       '/tmp/bids-examples/synthetic/sub-05/ses-02/sub-05_ses-02_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-05/ses-01/sub-05_ses-01_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-02/sub-02_sessions.tsv',
-       '/tmp/bids-examples/synthetic/sub-02/ses-02/sub-02_ses-02_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/sub-02_ses-01_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-03/sub-03_sessions.tsv',
-       '/tmp/bids-examples/synthetic/sub-03/ses-02/sub-03_ses-02_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/sub-03_ses-01_scans.tsv']},
+      'datatypes': ['anat']},
      {'task': 'nback',
       'file_count': 20,
       'subjects_with_task': ['01', '02', '03', '04', '05'],
-      'datatypes': ['func'],
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-01/ses-02/func/sub-01_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-02/func/sub-01_ses-02_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-01/func/sub-01_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-01/func/sub-01_ses-01_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-02/func/sub-04_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-02/func/sub-04_ses-02_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-01/func/sub-04_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-01/func/sub-04_ses-01_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-02/func/sub-05_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-02/func/sub-05_ses-02_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-01/func/sub-05_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-01/func/sub-05_ses-01_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-02/func/sub-02_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-02/func/sub-02_ses-02_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/func/sub-02_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/func/sub-02_ses-01_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-02/func/sub-03_ses-02_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-02/func/sub-03_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/func/sub-03_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/func/sub-03_ses-01_task-nback_run-01_bold.nii']},
+      'datatypes': ['func']},
      {'task': 'rest',
       'file_count': 10,
       'subjects_with_task': ['01', '02', '03', '04', '05'],
-      'datatypes': ['func'],
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-01/ses-02/func/sub-01_ses-02_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-01/func/sub-01_ses-01_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-02/func/sub-04_ses-02_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-01/func/sub-04_ses-01_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-02/func/sub-05_ses-02_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-01/func/sub-05_ses-01_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-02/func/sub-02_ses-02_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/func/sub-02_ses-01_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-02/func/sub-03_ses-02_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/func/sub-03_ses-01_task-rest_bold.nii']},
+      'datatypes': ['func']},
      {'task': 'stroop',
       'file_count': 5,
       'subjects_with_task': ['01', '02', '03', '04', '05'],
-      'datatypes': ['beh'],
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-01/ses-01/beh/sub-01_ses-01_task-stroop_beh.tsv',
-       '/tmp/bids-examples/synthetic/sub-04/ses-01/beh/sub-04_ses-01_task-stroop_beh.tsv',
-       '/tmp/bids-examples/synthetic/sub-05/ses-01/beh/sub-05_ses-01_task-stroop_beh.tsv',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/beh/sub-02_ses-01_task-stroop_beh.tsv',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/beh/sub-03_ses-01_task-stroop_beh.tsv']}]
+      'datatypes': ['beh']}]
 
 
 
@@ -1555,79 +1121,19 @@ q.run_query(
     [{'datatype': 'anat',
       'total_files': 10,
       'subjects': 5,
-      'subject_list': ['01', '02', '03', '04', '05'],
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-01/ses-02/anat/sub-01_ses-02_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-01/anat/sub-01_ses-01_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-02/anat/sub-04_ses-02_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-01/anat/sub-04_ses-01_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-02/anat/sub-05_ses-02_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-01/anat/sub-05_ses-01_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-02/anat/sub-02_ses-02_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/anat/sub-02_ses-01_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-02/anat/sub-03_ses-02_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/anat/sub-03_ses-01_T1w.nii']},
+      'subject_list': ['01', '02', '03', '04', '05']},
      {'datatype': 'func',
       'total_files': 30,
       'subjects': 5,
-      'subject_list': ['01', '02', '03', '04', '05'],
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-01/ses-02/func/sub-01_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-02/func/sub-01_ses-02_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-02/func/sub-01_ses-02_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-01/func/sub-01_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-01/func/sub-01_ses-01_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-01/func/sub-01_ses-01_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-02/func/sub-04_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-02/func/sub-04_ses-02_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-02/func/sub-04_ses-02_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-01/func/sub-04_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-01/func/sub-04_ses-01_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-01/func/sub-04_ses-01_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-02/func/sub-05_ses-02_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-02/func/sub-05_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-02/func/sub-05_ses-02_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-01/func/sub-05_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-01/func/sub-05_ses-01_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-01/func/sub-05_ses-01_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-02/func/sub-02_ses-02_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-02/func/sub-02_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-02/func/sub-02_ses-02_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/func/sub-02_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/func/sub-02_ses-01_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/func/sub-02_ses-01_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-02/func/sub-03_ses-02_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-02/func/sub-03_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-02/func/sub-03_ses-02_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/func/sub-03_ses-01_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/func/sub-03_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/func/sub-03_ses-01_task-nback_run-01_bold.nii']},
+      'subject_list': ['01', '02', '03', '04', '05']},
      {'datatype': None,
       'total_files': 15,
       'subjects': 5,
-      'subject_list': ['01', '02', '03', '04', '05'],
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-01/sub-01_sessions.tsv',
-       '/tmp/bids-examples/synthetic/sub-01/ses-02/sub-01_ses-02_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-01/ses-01/sub-01_ses-01_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-04/sub-04_sessions.tsv',
-       '/tmp/bids-examples/synthetic/sub-04/ses-02/sub-04_ses-02_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-04/ses-01/sub-04_ses-01_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-05/sub-05_sessions.tsv',
-       '/tmp/bids-examples/synthetic/sub-05/ses-02/sub-05_ses-02_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-05/ses-01/sub-05_ses-01_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-02/sub-02_sessions.tsv',
-       '/tmp/bids-examples/synthetic/sub-02/ses-02/sub-02_ses-02_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/sub-02_ses-01_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-03/sub-03_sessions.tsv',
-       '/tmp/bids-examples/synthetic/sub-03/ses-02/sub-03_ses-02_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/sub-03_ses-01_scans.tsv']},
+      'subject_list': ['01', '02', '03', '04', '05']},
      {'datatype': 'beh',
       'total_files': 5,
       'subjects': 5,
-      'subject_list': ['01', '02', '03', '04', '05'],
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-01/ses-01/beh/sub-01_ses-01_task-stroop_beh.tsv',
-       '/tmp/bids-examples/synthetic/sub-04/ses-01/beh/sub-04_ses-01_task-stroop_beh.tsv',
-       '/tmp/bids-examples/synthetic/sub-05/ses-01/beh/sub-05_ses-01_task-stroop_beh.tsv',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/beh/sub-02_ses-01_task-stroop_beh.tsv',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/beh/sub-03_ses-01_task-stroop_beh.tsv']}]
+      'subject_list': ['01', '02', '03', '04', '05']}]
 
 
 
@@ -1667,7 +1173,6 @@ q.run_query(
       <th>sub</th>
       <th>participants.age</th>
       <th>participants.sex</th>
-      <th>_file_paths</th>
     </tr>
   </thead>
   <tbody>
@@ -1676,35 +1181,30 @@ q.run_query(
       <td>01</td>
       <td>34</td>
       <td>F</td>
-      <td>/tmp/bids-examples/synthetic/sub-01/ses-02/ana...</td>
     </tr>
     <tr>
       <th>1</th>
       <td>04</td>
       <td>21</td>
       <td>F</td>
-      <td>/tmp/bids-examples/synthetic/sub-04/ses-02/ana...</td>
     </tr>
     <tr>
       <th>2</th>
       <td>05</td>
       <td>42</td>
       <td>M</td>
-      <td>/tmp/bids-examples/synthetic/sub-05/ses-02/ana...</td>
     </tr>
     <tr>
       <th>3</th>
       <td>02</td>
       <td>38</td>
       <td>M</td>
-      <td>/tmp/bids-examples/synthetic/sub-02/ses-02/ana...</td>
     </tr>
     <tr>
       <th>4</th>
       <td>03</td>
       <td>22</td>
       <td>M</td>
-      <td>/tmp/bids-examples/synthetic/sub-03/ses-02/ana...</td>
     </tr>
   </tbody>
 </table>
@@ -1744,7 +1244,6 @@ q.run_query(
       <th>sub</th>
       <th>task</th>
       <th>participants.age</th>
-      <th>_file_paths</th>
     </tr>
   </thead>
   <tbody>
@@ -1753,252 +1252,216 @@ q.run_query(
       <td>01</td>
       <td>None</td>
       <td>34</td>
-      <td>/tmp/bids-examples/synthetic/sub-01/ses-02/ana...</td>
     </tr>
     <tr>
       <th>1</th>
       <td>01</td>
       <td>nback</td>
       <td>34</td>
-      <td>/tmp/bids-examples/synthetic/sub-01/ses-02/fun...</td>
     </tr>
     <tr>
       <th>2</th>
       <td>01</td>
       <td>nback</td>
       <td>34</td>
-      <td>/tmp/bids-examples/synthetic/sub-01/ses-02/fun...</td>
     </tr>
     <tr>
       <th>3</th>
       <td>01</td>
       <td>rest</td>
       <td>34</td>
-      <td>/tmp/bids-examples/synthetic/sub-01/ses-02/fun...</td>
     </tr>
     <tr>
       <th>4</th>
       <td>01</td>
       <td>None</td>
       <td>34</td>
-      <td>/tmp/bids-examples/synthetic/sub-01/ses-01/ana...</td>
     </tr>
     <tr>
       <th>5</th>
       <td>01</td>
       <td>nback</td>
       <td>34</td>
-      <td>/tmp/bids-examples/synthetic/sub-01/ses-01/fun...</td>
     </tr>
     <tr>
       <th>6</th>
       <td>01</td>
       <td>rest</td>
       <td>34</td>
-      <td>/tmp/bids-examples/synthetic/sub-01/ses-01/fun...</td>
     </tr>
     <tr>
       <th>7</th>
       <td>01</td>
       <td>nback</td>
       <td>34</td>
-      <td>/tmp/bids-examples/synthetic/sub-01/ses-01/fun...</td>
     </tr>
     <tr>
       <th>8</th>
       <td>05</td>
       <td>None</td>
       <td>42</td>
-      <td>/tmp/bids-examples/synthetic/sub-05/ses-02/ana...</td>
     </tr>
     <tr>
       <th>9</th>
       <td>05</td>
       <td>rest</td>
       <td>42</td>
-      <td>/tmp/bids-examples/synthetic/sub-05/ses-02/fun...</td>
     </tr>
     <tr>
       <th>10</th>
       <td>05</td>
       <td>nback</td>
       <td>42</td>
-      <td>/tmp/bids-examples/synthetic/sub-05/ses-02/fun...</td>
     </tr>
     <tr>
       <th>11</th>
       <td>05</td>
       <td>nback</td>
       <td>42</td>
-      <td>/tmp/bids-examples/synthetic/sub-05/ses-02/fun...</td>
     </tr>
     <tr>
       <th>12</th>
       <td>05</td>
       <td>None</td>
       <td>42</td>
-      <td>/tmp/bids-examples/synthetic/sub-05/ses-01/ana...</td>
     </tr>
     <tr>
       <th>13</th>
       <td>05</td>
       <td>nback</td>
       <td>42</td>
-      <td>/tmp/bids-examples/synthetic/sub-05/ses-01/fun...</td>
     </tr>
     <tr>
       <th>14</th>
       <td>05</td>
       <td>rest</td>
       <td>42</td>
-      <td>/tmp/bids-examples/synthetic/sub-05/ses-01/fun...</td>
     </tr>
     <tr>
       <th>15</th>
       <td>05</td>
       <td>nback</td>
       <td>42</td>
-      <td>/tmp/bids-examples/synthetic/sub-05/ses-01/fun...</td>
     </tr>
     <tr>
       <th>16</th>
       <td>02</td>
       <td>None</td>
       <td>38</td>
-      <td>/tmp/bids-examples/synthetic/sub-02/ses-02/ana...</td>
     </tr>
     <tr>
       <th>17</th>
       <td>02</td>
       <td>rest</td>
       <td>38</td>
-      <td>/tmp/bids-examples/synthetic/sub-02/ses-02/fun...</td>
     </tr>
     <tr>
       <th>18</th>
       <td>02</td>
       <td>nback</td>
       <td>38</td>
-      <td>/tmp/bids-examples/synthetic/sub-02/ses-02/fun...</td>
     </tr>
     <tr>
       <th>19</th>
       <td>02</td>
       <td>nback</td>
       <td>38</td>
-      <td>/tmp/bids-examples/synthetic/sub-02/ses-02/fun...</td>
     </tr>
     <tr>
       <th>20</th>
       <td>02</td>
       <td>None</td>
       <td>38</td>
-      <td>/tmp/bids-examples/synthetic/sub-02/ses-01/ana...</td>
     </tr>
     <tr>
       <th>21</th>
       <td>02</td>
       <td>nback</td>
       <td>38</td>
-      <td>/tmp/bids-examples/synthetic/sub-02/ses-01/fun...</td>
     </tr>
     <tr>
       <th>22</th>
       <td>02</td>
       <td>nback</td>
       <td>38</td>
-      <td>/tmp/bids-examples/synthetic/sub-02/ses-01/fun...</td>
     </tr>
     <tr>
       <th>23</th>
       <td>02</td>
       <td>rest</td>
       <td>38</td>
-      <td>/tmp/bids-examples/synthetic/sub-02/ses-01/fun...</td>
     </tr>
     <tr>
       <th>24</th>
       <td>01</td>
       <td>None</td>
       <td>34</td>
-      <td>/tmp/bids-examples/synthetic/sub-01/sub-01_ses...</td>
     </tr>
     <tr>
       <th>25</th>
       <td>01</td>
       <td>None</td>
       <td>34</td>
-      <td>/tmp/bids-examples/synthetic/sub-01/ses-02/sub...</td>
     </tr>
     <tr>
       <th>26</th>
       <td>01</td>
       <td>None</td>
       <td>34</td>
-      <td>/tmp/bids-examples/synthetic/sub-01/ses-01/sub...</td>
     </tr>
     <tr>
       <th>27</th>
       <td>01</td>
       <td>stroop</td>
       <td>34</td>
-      <td>/tmp/bids-examples/synthetic/sub-01/ses-01/beh...</td>
     </tr>
     <tr>
       <th>28</th>
       <td>05</td>
       <td>None</td>
       <td>42</td>
-      <td>/tmp/bids-examples/synthetic/sub-05/sub-05_ses...</td>
     </tr>
     <tr>
       <th>29</th>
       <td>05</td>
       <td>None</td>
       <td>42</td>
-      <td>/tmp/bids-examples/synthetic/sub-05/ses-02/sub...</td>
     </tr>
     <tr>
       <th>30</th>
       <td>05</td>
       <td>None</td>
       <td>42</td>
-      <td>/tmp/bids-examples/synthetic/sub-05/ses-01/sub...</td>
     </tr>
     <tr>
       <th>31</th>
       <td>05</td>
       <td>stroop</td>
       <td>42</td>
-      <td>/tmp/bids-examples/synthetic/sub-05/ses-01/beh...</td>
     </tr>
     <tr>
       <th>32</th>
       <td>02</td>
       <td>None</td>
       <td>38</td>
-      <td>/tmp/bids-examples/synthetic/sub-02/sub-02_ses...</td>
     </tr>
     <tr>
       <th>33</th>
       <td>02</td>
       <td>None</td>
       <td>38</td>
-      <td>/tmp/bids-examples/synthetic/sub-02/ses-02/sub...</td>
     </tr>
     <tr>
       <th>34</th>
       <td>02</td>
       <td>None</td>
       <td>38</td>
-      <td>/tmp/bids-examples/synthetic/sub-02/ses-01/sub...</td>
     </tr>
     <tr>
       <th>35</th>
       <td>02</td>
       <td>stroop</td>
       <td>38</td>
-      <td>/tmp/bids-examples/synthetic/sub-02/ses-01/beh...</td>
     </tr>
   </tbody>
 </table>
@@ -2024,66 +1487,16 @@ q.run_query("""
 
 
 
-    [{'sub': '01',
-      'ses': '02',
-      'task': 'nback',
-      'n_runs': 2,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-01/ses-02/func/sub-01_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-02/func/sub-01_ses-02_task-nback_run-01_bold.nii']},
-     {'sub': '01',
-      'ses': '01',
-      'task': 'nback',
-      'n_runs': 2,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-01/ses-01/func/sub-01_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-01/func/sub-01_ses-01_task-nback_run-01_bold.nii']},
-     {'sub': '02',
-      'ses': '02',
-      'task': 'nback',
-      'n_runs': 2,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-02/ses-02/func/sub-02_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-02/func/sub-02_ses-02_task-nback_run-01_bold.nii']},
-     {'sub': '02',
-      'ses': '01',
-      'task': 'nback',
-      'n_runs': 2,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-02/ses-01/func/sub-02_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/func/sub-02_ses-01_task-nback_run-01_bold.nii']},
-     {'sub': '03',
-      'ses': '02',
-      'task': 'nback',
-      'n_runs': 2,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-03/ses-02/func/sub-03_ses-02_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-02/func/sub-03_ses-02_task-nback_run-02_bold.nii']},
-     {'sub': '03',
-      'ses': '01',
-      'task': 'nback',
-      'n_runs': 2,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-03/ses-01/func/sub-03_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/func/sub-03_ses-01_task-nback_run-01_bold.nii']},
-     {'sub': '04',
-      'ses': '02',
-      'task': 'nback',
-      'n_runs': 2,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-04/ses-02/func/sub-04_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-02/func/sub-04_ses-02_task-nback_run-01_bold.nii']},
-     {'sub': '04',
-      'ses': '01',
-      'task': 'nback',
-      'n_runs': 2,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-04/ses-01/func/sub-04_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-01/func/sub-04_ses-01_task-nback_run-01_bold.nii']},
-     {'sub': '05',
-      'ses': '02',
-      'task': 'nback',
-      'n_runs': 2,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-05/ses-02/func/sub-05_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-02/func/sub-05_ses-02_task-nback_run-01_bold.nii']},
-     {'sub': '05',
-      'ses': '01',
-      'task': 'nback',
-      'n_runs': 2,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-05/ses-01/func/sub-05_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-01/func/sub-05_ses-01_task-nback_run-01_bold.nii']}]
+    [{'sub': '01', 'ses': '02', 'task': 'nback', 'n_runs': 2},
+     {'sub': '01', 'ses': '01', 'task': 'nback', 'n_runs': 2},
+     {'sub': '02', 'ses': '02', 'task': 'nback', 'n_runs': 2},
+     {'sub': '02', 'ses': '01', 'task': 'nback', 'n_runs': 2},
+     {'sub': '03', 'ses': '02', 'task': 'nback', 'n_runs': 2},
+     {'sub': '03', 'ses': '01', 'task': 'nback', 'n_runs': 2},
+     {'sub': '04', 'ses': '02', 'task': 'nback', 'n_runs': 2},
+     {'sub': '04', 'ses': '01', 'task': 'nback', 'n_runs': 2},
+     {'sub': '05', 'ses': '02', 'task': 'nback', 'n_runs': 2},
+     {'sub': '05', 'ses': '01', 'task': 'nback', 'n_runs': 2}]
 
 
 
@@ -2151,14 +1564,8 @@ results_json[:2]  # Show first 2 entries
 
 
 
-    [{'sub': '01',
-      'task': 'nback',
-      'run': '02',
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-01/ses-02/func/sub-01_ses-02_task-nback_run-02_bold.nii']},
-     {'sub': '01',
-      'task': 'nback',
-      'run': '01',
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-01/ses-02/func/sub-01_ses-02_task-nback_run-01_bold.nii']}]
+    [{'sub': '01', 'task': 'nback', 'run': '02'},
+     {'sub': '01', 'task': 'nback', 'run': '01'}]
 
 
 
@@ -2200,7 +1607,6 @@ q.run_query(sample_query, format="dataframe")
       <th>sub</th>
       <th>task</th>
       <th>run</th>
-      <th>_file_paths</th>
     </tr>
   </thead>
   <tbody>
@@ -2209,42 +1615,36 @@ q.run_query(sample_query, format="dataframe")
       <td>01</td>
       <td>nback</td>
       <td>02</td>
-      <td>/tmp/bids-examples/synthetic/sub-01/ses-02/fun...</td>
     </tr>
     <tr>
       <th>1</th>
       <td>01</td>
       <td>nback</td>
       <td>01</td>
-      <td>/tmp/bids-examples/synthetic/sub-01/ses-02/fun...</td>
     </tr>
     <tr>
       <th>2</th>
       <td>01</td>
       <td>rest</td>
       <td>None</td>
-      <td>/tmp/bids-examples/synthetic/sub-01/ses-02/fun...</td>
     </tr>
     <tr>
       <th>3</th>
       <td>01</td>
       <td>nback</td>
       <td>02</td>
-      <td>/tmp/bids-examples/synthetic/sub-01/ses-01/fun...</td>
     </tr>
     <tr>
       <th>4</th>
       <td>01</td>
       <td>rest</td>
       <td>None</td>
-      <td>/tmp/bids-examples/synthetic/sub-01/ses-01/fun...</td>
     </tr>
     <tr>
       <th>5</th>
       <td>01</td>
       <td>nback</td>
       <td>01</td>
-      <td>/tmp/bids-examples/synthetic/sub-01/ses-01/fun...</td>
     </tr>
   </tbody>
 </table>
@@ -2273,83 +1673,23 @@ q.run_query("""
     [{'sub': '01',
       'total_files': 12,
       'datatypes': 3,
-      'available_data': ['anat', 'beh', 'func'],
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-01/ses-02/anat/sub-01_ses-02_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-02/func/sub-01_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-02/func/sub-01_ses-02_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-02/func/sub-01_ses-02_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-01/anat/sub-01_ses-01_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-01/func/sub-01_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-01/func/sub-01_ses-01_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-01/func/sub-01_ses-01_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/sub-01_sessions.tsv',
-       '/tmp/bids-examples/synthetic/sub-01/ses-02/sub-01_ses-02_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-01/ses-01/sub-01_ses-01_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-01/ses-01/beh/sub-01_ses-01_task-stroop_beh.tsv']},
+      'available_data': ['anat', 'beh', 'func']},
      {'sub': '04',
       'total_files': 12,
       'datatypes': 3,
-      'available_data': ['anat', 'beh', 'func'],
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-04/ses-02/anat/sub-04_ses-02_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-02/func/sub-04_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-02/func/sub-04_ses-02_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-02/func/sub-04_ses-02_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-01/anat/sub-04_ses-01_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-01/func/sub-04_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-01/func/sub-04_ses-01_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-01/func/sub-04_ses-01_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-04/sub-04_sessions.tsv',
-       '/tmp/bids-examples/synthetic/sub-04/ses-02/sub-04_ses-02_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-04/ses-01/sub-04_ses-01_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-04/ses-01/beh/sub-04_ses-01_task-stroop_beh.tsv']},
+      'available_data': ['anat', 'beh', 'func']},
      {'sub': '05',
       'total_files': 12,
       'datatypes': 3,
-      'available_data': ['anat', 'beh', 'func'],
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-05/ses-02/anat/sub-05_ses-02_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-02/func/sub-05_ses-02_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-02/func/sub-05_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-02/func/sub-05_ses-02_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-01/anat/sub-05_ses-01_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-01/func/sub-05_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-01/func/sub-05_ses-01_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-01/func/sub-05_ses-01_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-05/sub-05_sessions.tsv',
-       '/tmp/bids-examples/synthetic/sub-05/ses-02/sub-05_ses-02_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-05/ses-01/sub-05_ses-01_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-05/ses-01/beh/sub-05_ses-01_task-stroop_beh.tsv']},
+      'available_data': ['anat', 'beh', 'func']},
      {'sub': '02',
       'total_files': 12,
       'datatypes': 3,
-      'available_data': ['anat', 'beh', 'func'],
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-02/ses-02/anat/sub-02_ses-02_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-02/func/sub-02_ses-02_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-02/func/sub-02_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-02/func/sub-02_ses-02_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/anat/sub-02_ses-01_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/func/sub-02_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/func/sub-02_ses-01_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/func/sub-02_ses-01_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/sub-02_sessions.tsv',
-       '/tmp/bids-examples/synthetic/sub-02/ses-02/sub-02_ses-02_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/sub-02_ses-01_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/beh/sub-02_ses-01_task-stroop_beh.tsv']},
+      'available_data': ['anat', 'beh', 'func']},
      {'sub': '03',
       'total_files': 12,
       'datatypes': 3,
-      'available_data': ['anat', 'beh', 'func'],
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-03/ses-02/anat/sub-03_ses-02_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-02/func/sub-03_ses-02_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-02/func/sub-03_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-02/func/sub-03_ses-02_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/anat/sub-03_ses-01_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/func/sub-03_ses-01_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/func/sub-03_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/func/sub-03_ses-01_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/sub-03_sessions.tsv',
-       '/tmp/bids-examples/synthetic/sub-03/ses-02/sub-03_ses-02_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/sub-03_ses-01_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/beh/sub-03_ses-01_task-stroop_beh.tsv']}]
+      'available_data': ['anat', 'beh', 'func']}]
 
 
 
@@ -2369,123 +1709,48 @@ q.run_query("""
     [{'sub': '01',
       'ses': '02',
       'files_per_session': 5,
-      'tasks_in_session': ['nback', 'rest'],
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-01/ses-02/anat/sub-01_ses-02_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-02/func/sub-01_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-02/func/sub-01_ses-02_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-02/func/sub-01_ses-02_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-02/sub-01_ses-02_scans.tsv']},
+      'tasks_in_session': ['nback', 'rest']},
      {'sub': '01',
       'ses': '01',
       'files_per_session': 6,
-      'tasks_in_session': ['nback', 'rest', 'stroop'],
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-01/ses-01/anat/sub-01_ses-01_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-01/func/sub-01_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-01/func/sub-01_ses-01_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-01/func/sub-01_ses-01_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-01/sub-01_ses-01_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-01/ses-01/beh/sub-01_ses-01_task-stroop_beh.tsv']},
+      'tasks_in_session': ['nback', 'rest', 'stroop']},
      {'sub': '04',
       'ses': '02',
       'files_per_session': 5,
-      'tasks_in_session': ['nback', 'rest'],
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-04/ses-02/anat/sub-04_ses-02_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-02/func/sub-04_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-02/func/sub-04_ses-02_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-02/func/sub-04_ses-02_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-02/sub-04_ses-02_scans.tsv']},
+      'tasks_in_session': ['nback', 'rest']},
      {'sub': '04',
       'ses': '01',
       'files_per_session': 6,
-      'tasks_in_session': ['nback', 'rest', 'stroop'],
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-04/ses-01/anat/sub-04_ses-01_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-01/func/sub-04_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-01/func/sub-04_ses-01_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-01/func/sub-04_ses-01_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-01/sub-04_ses-01_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-04/ses-01/beh/sub-04_ses-01_task-stroop_beh.tsv']},
+      'tasks_in_session': ['nback', 'rest', 'stroop']},
      {'sub': '05',
       'ses': '02',
       'files_per_session': 5,
-      'tasks_in_session': ['nback', 'rest'],
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-05/ses-02/anat/sub-05_ses-02_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-02/func/sub-05_ses-02_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-02/func/sub-05_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-02/func/sub-05_ses-02_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-02/sub-05_ses-02_scans.tsv']},
+      'tasks_in_session': ['nback', 'rest']},
      {'sub': '05',
       'ses': '01',
       'files_per_session': 6,
-      'tasks_in_session': ['nback', 'rest', 'stroop'],
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-05/ses-01/anat/sub-05_ses-01_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-01/func/sub-05_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-01/func/sub-05_ses-01_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-01/func/sub-05_ses-01_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-01/sub-05_ses-01_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-05/ses-01/beh/sub-05_ses-01_task-stroop_beh.tsv']},
+      'tasks_in_session': ['nback', 'rest', 'stroop']},
      {'sub': '02',
       'ses': '02',
       'files_per_session': 5,
-      'tasks_in_session': ['nback', 'rest'],
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-02/ses-02/anat/sub-02_ses-02_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-02/func/sub-02_ses-02_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-02/func/sub-02_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-02/func/sub-02_ses-02_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-02/sub-02_ses-02_scans.tsv']},
+      'tasks_in_session': ['nback', 'rest']},
      {'sub': '02',
       'ses': '01',
       'files_per_session': 6,
-      'tasks_in_session': ['nback', 'rest', 'stroop'],
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-02/ses-01/anat/sub-02_ses-01_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/func/sub-02_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/func/sub-02_ses-01_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/func/sub-02_ses-01_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/sub-02_ses-01_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/beh/sub-02_ses-01_task-stroop_beh.tsv']},
+      'tasks_in_session': ['nback', 'rest', 'stroop']},
      {'sub': '03',
       'ses': '02',
       'files_per_session': 5,
-      'tasks_in_session': ['nback', 'rest'],
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-03/ses-02/anat/sub-03_ses-02_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-02/func/sub-03_ses-02_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-02/func/sub-03_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-02/func/sub-03_ses-02_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-02/sub-03_ses-02_scans.tsv']},
+      'tasks_in_session': ['nback', 'rest']},
      {'sub': '03',
       'ses': '01',
       'files_per_session': 6,
-      'tasks_in_session': ['nback', 'rest', 'stroop'],
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-03/ses-01/anat/sub-03_ses-01_T1w.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/func/sub-03_ses-01_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/func/sub-03_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/func/sub-03_ses-01_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/sub-03_ses-01_scans.tsv',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/beh/sub-03_ses-01_task-stroop_beh.tsv']},
-     {'sub': '01',
-      'ses': None,
-      'files_per_session': 1,
-      'tasks_in_session': [],
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-01/sub-01_sessions.tsv']},
-     {'sub': '04',
-      'ses': None,
-      'files_per_session': 1,
-      'tasks_in_session': [],
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-04/sub-04_sessions.tsv']},
-     {'sub': '05',
-      'ses': None,
-      'files_per_session': 1,
-      'tasks_in_session': [],
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-05/sub-05_sessions.tsv']},
-     {'sub': '02',
-      'ses': None,
-      'files_per_session': 1,
-      'tasks_in_session': [],
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-02/sub-02_sessions.tsv']},
-     {'sub': '03',
-      'ses': None,
-      'files_per_session': 1,
-      'tasks_in_session': [],
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-03/sub-03_sessions.tsv']}]
+      'tasks_in_session': ['nback', 'rest', 'stroop']},
+     {'sub': '01', 'ses': None, 'files_per_session': 1, 'tasks_in_session': []},
+     {'sub': '04', 'ses': None, 'files_per_session': 1, 'tasks_in_session': []},
+     {'sub': '05', 'ses': None, 'files_per_session': 1, 'tasks_in_session': []},
+     {'sub': '02', 'ses': None, 'files_per_session': 1, 'tasks_in_session': []},
+     {'sub': '03', 'ses': None, 'files_per_session': 1, 'tasks_in_session': []}]
 
 
 
@@ -2508,53 +1773,23 @@ q.run_query("""
     [{'sub': '01',
       'unique_tasks': 2,
       'completed_tasks': ['nback', 'rest'],
-      'total_functional_files': 6,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-01/ses-02/func/sub-01_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-02/func/sub-01_ses-02_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-02/func/sub-01_ses-02_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-01/func/sub-01_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-01/func/sub-01_ses-01_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-01/ses-01/func/sub-01_ses-01_task-nback_run-01_bold.nii']},
+      'total_functional_files': 6},
      {'sub': '04',
       'unique_tasks': 2,
       'completed_tasks': ['nback', 'rest'],
-      'total_functional_files': 6,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-04/ses-02/func/sub-04_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-02/func/sub-04_ses-02_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-02/func/sub-04_ses-02_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-01/func/sub-04_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-01/func/sub-04_ses-01_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-04/ses-01/func/sub-04_ses-01_task-nback_run-01_bold.nii']},
+      'total_functional_files': 6},
      {'sub': '05',
       'unique_tasks': 2,
       'completed_tasks': ['nback', 'rest'],
-      'total_functional_files': 6,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-05/ses-02/func/sub-05_ses-02_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-02/func/sub-05_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-02/func/sub-05_ses-02_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-01/func/sub-05_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-01/func/sub-05_ses-01_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-05/ses-01/func/sub-05_ses-01_task-nback_run-01_bold.nii']},
+      'total_functional_files': 6},
      {'sub': '02',
       'unique_tasks': 2,
       'completed_tasks': ['nback', 'rest'],
-      'total_functional_files': 6,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-02/ses-02/func/sub-02_ses-02_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-02/func/sub-02_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-02/func/sub-02_ses-02_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/func/sub-02_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/func/sub-02_ses-01_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-02/ses-01/func/sub-02_ses-01_task-rest_bold.nii']},
+      'total_functional_files': 6},
      {'sub': '03',
       'unique_tasks': 2,
       'completed_tasks': ['nback', 'rest'],
-      'total_functional_files': 6,
-      '_file_paths': ['/tmp/bids-examples/synthetic/sub-03/ses-02/func/sub-03_ses-02_task-nback_run-01_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-02/func/sub-03_ses-02_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-02/func/sub-03_ses-02_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/func/sub-03_ses-01_task-rest_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/func/sub-03_ses-01_task-nback_run-02_bold.nii',
-       '/tmp/bids-examples/synthetic/sub-03/ses-01/func/sub-03_ses-01_task-nback_run-01_bold.nii']}]
+      'total_functional_files': 6}]
 
 
 
