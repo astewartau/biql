@@ -36,12 +36,12 @@ First, let's set up our environment and get the example data:
 ```python
 import tempfile
 from pathlib import Path
-from biql import create_query_engine
 import sys
 
 # Install BIQL if running in Colab
 if 'google.colab' in sys.modules:
     !pip install git+https://github.com/astewartau/biql.git > /dev/null 2>&1
+from biql import create_query_engine
 
 # Set up paths - use a temporary directory that works in different environments 
 bids_examples_dir = Path(tempfile.gettempdir()) / "bids-examples"
