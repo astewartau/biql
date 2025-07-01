@@ -193,7 +193,10 @@ class BIQLEvaluator:
             return expr.value
 
         elif isinstance(expr, Range):
-            return (expr.start, expr.end)
+            # Extract the actual values from the Range expressions
+            start_val = self._get_value(file, expr.start)
+            end_val = self._get_value(file, expr.end)
+            return (start_val, end_val)
 
         elif isinstance(expr, ListExpression):
             return [self._get_literal_value(item) for item in expr.items]
@@ -265,7 +268,10 @@ class BIQLEvaluator:
         if isinstance(right, tuple) and len(right) == 2:
             try:
                 left_num = float(left) if isinstance(left, str) else left
-                return right[0] <= left_num <= right[1]
+                # Ensure range bounds are numeric
+                start_num = float(right[0]) if isinstance(right[0], str) else right[0]
+                end_num = float(right[1]) if isinstance(right[1], str) else right[1]
+                return start_num <= left_num <= end_num
             except (ValueError, TypeError):
                 return False
 
@@ -520,7 +526,10 @@ class BIQLEvaluator:
             return expr.value
 
         elif isinstance(expr, Range):
-            return (expr.start, expr.end)
+            # Extract the actual values from the Range expressions
+            start_val = self._get_value_dict(item, expr.start)
+            end_val = self._get_value_dict(item, expr.end)
+            return (start_val, end_val)
 
         elif isinstance(expr, ListExpression):
             return [self._get_literal_value(item) for item in expr.items]

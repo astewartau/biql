@@ -231,6 +231,77 @@ class TestBIQLQueryAPI:
         assert "metadata.RepetitionTime" in df.columns
         assert len(df) == test_dataset.expected_func_files  # Exactly 4 func files
 
+    def test_range_syntax_bug_with_synthetic_dataset(self):
+        """Test range syntax bug using the actual synthetic dataset from bids-examples"""
+        # Use the same dataset path as the notebook
+        synthetic_path = Path("/home/ashley/repos/bids-examples/synthetic")
+        if not synthetic_path.exists():
+            pytest.skip("bids-examples/synthetic dataset not found")
+
+        # Create query engine exactly like the notebook does
+        q = create_query_engine(synthetic_path)
+
+        # User's exact queries that demonstrate the bug
+        results_range = q.run_query("SELECT sub WHERE run=[1:2]", format="json")
+        results_in = q.run_query("SELECT sub WHERE run IN [1,2]", format="json")
+
+        # Debug output
+        print(f"\nUsing synthetic dataset at {synthetic_path}")
+        print(f"Range [1:2] returned: {len(results_range)} results")
+        print(f"IN [1,2] returned: {len(results_in)} results")
+
+        # Should have 20 results (5 subjects × 2 sessions × 2 runs for nback task)
+        assert (
+            len(results_in) == 20
+        ), f"Expected 20 results from IN syntax, got {len(results_in)}"
+        assert (
+            len(results_range) == 20
+        ), f"Range syntax should return 20 results but returned {len(results_range)}"
+
+    def test_range_syntax_bug(self):
+        """Test the reported bug: run=[1:2] returns [] while run IN [1,2] works"""
+        # Create test dataset with run values to reproduce the exact bug
+        tmpdir = Path(tempfile.mkdtemp())
+
+        # Dataset description
+        (tmpdir / "dataset_description.json").write_text(
+            json.dumps({"Name": "Test", "BIDSVersion": "1.8.0"})
+        )
+
+        # Create files with run values
+        for sub in ["01", "02"]:
+            for run in ["01", "02", "03"]:
+                func_dir = tmpdir / f"sub-{sub}" / "func"
+                func_dir.mkdir(parents=True, exist_ok=True)
+                filename = f"sub-{sub}_task-test_run-{run}_bold.nii"
+                (func_dir / filename).touch()
+
+        # Create query engine like the notebook does
+        biql = create_query_engine(tmpdir)
+
+        # Test range syntax [1:2] - user reported this returns []
+        results_range = biql.run_query("SELECT sub WHERE run=[1:2]", format="json")
+
+        # Test IN syntax [1,2] - user reported this works
+        results_in = biql.run_query("SELECT sub WHERE run IN [1,2]", format="json")
+
+        # IN should work and return 4 results (2 subjects × 2 runs)
+        assert (
+            len(results_in) == 4
+        ), f"Expected 4 results from IN syntax, got {len(results_in)}"
+
+        # Range should return the same but currently returns []
+        assert (
+            len(results_range) == 4
+        ), f"Range syntax [1:2] should return 4 results but returned {len(results_range)}"
+
+        # Results should be identical
+        subs_range = sorted([r["sub"] for r in results_range])
+        subs_in = sorted([r["sub"] for r in results_in])
+        assert (
+            subs_range == subs_in
+        ), f"Range returned {subs_range}, IN returned {subs_in}"
+
     def test_error_handling(self, test_dataset):
         """Test error handling in query API"""
         biql = create_query_engine(test_dataset.path)
