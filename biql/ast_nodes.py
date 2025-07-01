@@ -102,6 +102,15 @@ class ConditionalAggregateFunction(Expression):
 
 
 @dataclass
+class ParenthesizedExpression(Expression):
+    """Parenthesized expression for implicit aggregation (e.g., (DISTINCT field), (field WHERE condition))"""
+
+    expression: Expression
+    distinct: bool = False
+    condition: Optional[Expression] = None
+
+
+@dataclass
 class Query(ASTNode):
     """Complete BIQL query with all clauses"""
 

@@ -128,7 +128,6 @@ class BIQLParser:
                     TokenType.MAX,
                     TokenType.MIN,
                     TokenType.SUM,
-                    TokenType.ARRAY_AGG,
                 ]:
                     # This is a function call
                     func_name = self._consume(self._current_token_type()).value
@@ -137,53 +136,51 @@ class BIQLParser:
                     # Handle function arguments
                     if self._current_token_type() == TokenType.STAR:
                         self._consume(TokenType.STAR)
-                        # Check for ARRAY_AGG(*) with WHERE clause
-                        if (
-                            func_name == "ARRAY_AGG"
-                            and self._current_token_type() == TokenType.WHERE
-                        ):
-                            self._consume(TokenType.WHERE)
-                            condition = self._parse_expression()
-                            self._consume(TokenType.RPAREN)
-                            condition_str = self._expr_to_string(condition)
-                            expr = f"ARRAY_AGG(* WHERE {condition_str})"
-                        else:
-                            self._consume(TokenType.RPAREN)
-                            func_expr = f"{func_name}(*)"
-                            expr = func_expr
+                        self._consume(TokenType.RPAREN)
+                        func_expr = f"{func_name}(*)"
+                        expr = func_expr
                     elif self._current_token_type() == TokenType.DISTINCT:
                         # Handle DISTINCT in aggregate functions
                         self._consume(TokenType.DISTINCT)
                         arg = self._parse_identifier_path()
-
-                        # Check for WHERE clause after DISTINCT
-                        if self._current_token_type() == TokenType.WHERE:
-                            self._consume(TokenType.WHERE)
-                            condition = self._parse_expression()
-                            self._consume(TokenType.RPAREN)
-                            condition_str = self._expr_to_string(condition)
-                            expr = f"{func_name}(DISTINCT {arg} WHERE {condition_str})"
-                        else:
-                            self._consume(TokenType.RPAREN)
-                            expr = f"{func_name}(DISTINCT {arg})"
+                        self._consume(TokenType.RPAREN)
+                        expr = f"{func_name}(DISTINCT {arg})"
                     else:
                         arg = self._parse_identifier_path()
+                        self._consume(TokenType.RPAREN)
+                        func_expr = f"{func_name}({arg})"
+                        expr = func_expr
+                elif self._current_token_type() == TokenType.LPAREN:
+                    # Parenthesized expression for implicit aggregation
+                    self._consume(TokenType.LPAREN)
 
-                        # Check for ARRAY_AGG with WHERE clause
-                        if (
-                            func_name == "ARRAY_AGG"
-                            and self._current_token_type() == TokenType.WHERE
-                        ):
-                            self._consume(TokenType.WHERE)
-                            condition = self._parse_expression()
-                            self._consume(TokenType.RPAREN)
-                            # Convert condition to string representation for now
-                            condition_str = self._expr_to_string(condition)
-                            expr = f"ARRAY_AGG({arg} WHERE {condition_str})"
-                        else:
-                            self._consume(TokenType.RPAREN)
-                            func_expr = f"{func_name}({arg})"
-                            expr = func_expr
+                    # Check for DISTINCT
+                    distinct = False
+                    if self._current_token_type() == TokenType.DISTINCT:
+                        distinct = True
+                        self._consume(TokenType.DISTINCT)
+
+                    # Parse the field
+                    field_expr = self._parse_identifier_path()
+
+                    # Check for WHERE clause
+                    condition = None
+                    if self._current_token_type() == TokenType.WHERE:
+                        self._consume(TokenType.WHERE)
+                        condition = self._parse_expression()
+                        condition_str = self._expr_to_string(condition)
+
+                    self._consume(TokenType.RPAREN)
+
+                    # Build the expression string
+                    if distinct and condition:
+                        expr = f"(DISTINCT {field_expr} WHERE {self._expr_to_string(condition)})"
+                    elif distinct:
+                        expr = f"(DISTINCT {field_expr})"
+                    elif condition:
+                        expr = f"({field_expr} WHERE {self._expr_to_string(condition)})"
+                    else:
+                        expr = f"({field_expr})"
                 else:
                     # Regular identifier path
                     expr = self._parse_identifier_path()

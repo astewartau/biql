@@ -393,9 +393,7 @@ class BIQLEvaluator:
             return False
 
         for item, alias in select_clause.items:
-            if item.startswith(
-                ("COUNT(", "AVG(", "MAX(", "MIN(", "SUM(", "ARRAY_AGG(")
-            ):
+            if item.startswith(("COUNT(", "AVG(", "MAX(", "MIN(", "SUM(", "(")):
                 return True
         return False
 
