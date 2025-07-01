@@ -12,22 +12,6 @@ The examples below are automatically executed and updated whenever the documenta
 
 **Want to run this interactively?** Click the "Open in Colab" button above to run and modify the code yourself!
 
-# Setup for Google Colab - run this cell first if using Colab
-import sys
-
-# Install BIQL if running in Colab
-if 'google.colab' in sys.modules:
-    print("🔧 Installing BIQL for Google Colab...")
-    !pip install git+https://github.com/astewartau/biql.git
-    print("✅ BIQL installed successfully!")
-else:
-    print("✅ Running in local environment")
-```
-
-    ✅ Running in local environment
-
-
-# BIQL Tutorial Guide
 
 Welcome to the BIQL (BIDS Query Language) tutorial! This guide will walk you through
 using BIQL to query BIDS neuroimaging datasets. We'll start with basic queries and
@@ -53,470 +37,19 @@ First, let's set up our environment and get the example data:
 import tempfile
 from pathlib import Path
 from biql import create_query_engine
+import sys
+
+# Install BIQL if running in Colab
+if 'google.colab' in sys.modules:
+    !pip install git+https://github.com/astewartau/biql.git > /dev/null 2>&1
 
 # Set up paths - use a temporary directory that works in different environments
 bids_examples_dir = Path(tempfile.gettempdir()) / "bids-examples"
 
 # Clone bids-examples if it doesn't exist
 if not bids_examples_dir.exists():
-    !git clone https://github.com/bids-standard/bids-examples.git {bids_examples_dir}
-else:
-    print(f"✅ bids-examples already exists at {bids_examples_dir}")
+    !git clone https://github.com/bids-standard/bids-examples.git {bids_examples_dir} > /dev/null 2>&1
 ```
-
-    Cloning into '/tmp/bids-examples'...
-
-
-    remote: Enumerating objects: 30595, done.[K
-    remote: Counting objects:   0% (1/1900)[K
-remote: Counting objects:   1% (19/1900)[K
-remote: Counting objects:   2% (38/1900)[K
-remote: Counting objects:   3% (57/1900)[K
-remote: Counting objects:   4% (76/1900)[K
-remote: Counting objects:   5% (95/1900)[K
-remote: Counting objects:   6% (114/1900)[K
-remote: Counting objects:   7% (133/1900)[K
-remote: Counting objects:   8% (152/1900)[K
-remote: Counting objects:   9% (171/1900)[K
-remote: Counting objects:  10% (190/1900)[K
-remote: Counting objects:  11% (209/1900)[K
-remote: Counting objects:  12% (228/1900)[K
-remote: Counting objects:  13% (247/1900)[K
-remote: Counting objects:  14% (266/1900)[K
-remote: Counting objects:  15% (285/1900)[K
-remote: Counting objects:  16% (304/1900)[K
-remote: Counting objects:  17% (323/1900)[K
-remote: Counting objects:  18% (342/1900)[K
-remote: Counting objects:  19% (361/1900)[K
-remote: Counting objects:  20% (380/1900)[K
-remote: Counting objects:  21% (399/1900)[K
-remote: Counting objects:  22% (418/1900)[K
-remote: Counting objects:  23% (437/1900)[K
-remote: Counting objects:  24% (456/1900)[K
-remote: Counting objects:  25% (475/1900)[K
-remote: Counting objects:  26% (494/1900)[K
-remote: Counting objects:  27% (513/1900)[K
-remote: Counting objects:  28% (532/1900)[K
-remote: Counting objects:  29% (551/1900)[K
-remote: Counting objects:  30% (570/1900)[K
-remote: Counting objects:  31% (589/1900)[K
-remote: Counting objects:  32% (608/1900)[K
-remote: Counting objects:  33% (627/1900)[K
-remote: Counting objects:  34% (646/1900)[K
-remote: Counting objects:  35% (665/1900)[K
-remote: Counting objects:  36% (684/1900)[K
-remote: Counting objects:  37% (703/1900)[K
-remote: Counting objects:  38% (722/1900)[K
-remote: Counting objects:  39% (741/1900)[K
-remote: Counting objects:  40% (760/1900)[K
-remote: Counting objects:  41% (779/1900)[K
-remote: Counting objects:  42% (798/1900)[K
-remote: Counting objects:  43% (817/1900)[K
-remote: Counting objects:  44% (836/1900)[K
-remote: Counting objects:  45% (855/1900)[K
-remote: Counting objects:  46% (874/1900)[K
-remote: Counting objects:  47% (893/1900)[K
-remote: Counting objects:  48% (912/1900)[K
-remote: Counting objects:  49% (931/1900)[K
-remote: Counting objects:  50% (950/1900)[K
-remote: Counting objects:  51% (969/1900)[K
-remote: Counting objects:  52% (988/1900)[K
-remote: Counting objects:  53% (1007/1900)[K
-remote: Counting objects:  54% (1026/1900)[K
-remote: Counting objects:  55% (1045/1900)[K
-remote: Counting objects:  56% (1064/1900)[K
-remote: Counting objects:  57% (1083/1900)[K
-remote: Counting objects:  58% (1102/1900)[K
-remote: Counting objects:  59% (1121/1900)[K
-remote: Counting objects:  60% (1140/1900)[K
-remote: Counting objects:  61% (1159/1900)[K
-remote: Counting objects:  62% (1178/1900)[K
-remote: Counting objects:  63% (1197/1900)[K
-remote: Counting objects:  64% (1216/1900)[K
-remote: Counting objects:  65% (1235/1900)[K
-remote: Counting objects:  66% (1254/1900)[K
-remote: Counting objects:  67% (1273/1900)[K
-remote: Counting objects:  68% (1292/1900)[K
-remote: Counting objects:  69% (1311/1900)[K
-remote: Counting objects:  70% (1330/1900)[K
-remote: Counting objects:  71% (1349/1900)[K
-remote: Counting objects:  72% (1368/1900)[K
-remote: Counting objects:  73% (1387/1900)[K
-remote: Counting objects:  74% (1406/1900)[K
-remote: Counting objects:  75% (1425/1900)[K
-remote: Counting objects:  76% (1444/1900)[K
-remote: Counting objects:  77% (1463/1900)[K
-remote: Counting objects:  78% (1482/1900)[K
-remote: Counting objects:  79% (1501/1900)[K
-remote: Counting objects:  80% (1520/1900)[K
-remote: Counting objects:  81% (1539/1900)[K
-remote: Counting objects:  82% (1558/1900)[K
-remote: Counting objects:  83% (1577/1900)[K
-remote: Counting objects:  84% (1596/1900)[K
-remote: Counting objects:  85% (1615/1900)[K
-remote: Counting objects:  86% (1634/1900)[K
-remote: Counting objects:  87% (1653/1900)[K
-remote: Counting objects:  88% (1672/1900)[K
-remote: Counting objects:  89% (1691/1900)[K
-remote: Counting objects:  90% (1710/1900)[K
-remote: Counting objects:  91% (1729/1900)[K
-remote: Counting objects:  92% (1748/1900)[K
-remote: Counting objects:  93% (1767/1900)[K
-remote: Counting objects:  94% (1786/1900)[K
-remote: Counting objects:  95% (1805/1900)[K
-remote: Counting objects:  96% (1824/1900)[K
-remote: Counting objects:  97% (1843/1900)[K
-remote: Counting objects:  98% (1862/1900)[K
-remote: Counting objects:  99% (1881/1900)[K
-remote: Counting objects: 100% (1900/1900)[K
-remote: Counting objects: 100% (1900/1900), done.[K
-    remote: Compressing objects:   0% (1/441)[K
-remote: Compressing objects:   1% (5/441)[K
-
-    remote: Compressing objects:   2% (9/441)[K
-remote: Compressing objects:   3% (14/441)[K
-remote: Compressing objects:   4% (18/441)[K
-remote: Compressing objects:   5% (23/441)[K
-remote: Compressing objects:   6% (27/441)[K
-remote: Compressing objects:   7% (31/441)[K
-remote: Compressing objects:   8% (36/441)[K
-remote: Compressing objects:   9% (40/441)[K
-remote: Compressing objects:  10% (45/441)[K
-remote: Compressing objects:  11% (49/441)[K
-remote: Compressing objects:  12% (53/441)[K
-remote: Compressing objects:  13% (58/441)[K
-remote: Compressing objects:  14% (62/441)[K
-remote: Compressing objects:  15% (67/441)[K
-remote: Compressing objects:  16% (71/441)[K
-remote: Compressing objects:  17% (75/441)[K
-remote: Compressing objects:  18% (80/441)[K
-remote: Compressing objects:  19% (84/441)[K
-remote: Compressing objects:  20% (89/441)[K
-remote: Compressing objects:  21% (93/441)[K
-
-    remote: Compressing objects:  22% (98/441)[K
-
-    remote: Compressing objects:  23% (102/441)[K
-
-    remote: Compressing objects:  24% (106/441)[K
-
-    remote: Compressing objects:  25% (111/441)[K
-
-    remote: Compressing objects:  26% (115/441)[K
-remote: Compressing objects:  27% (120/441)[K
-remote: Compressing objects:  28% (124/441)[K
-remote: Compressing objects:  29% (128/441)[K
-remote: Compressing objects:  30% (133/441)[K
-remote: Compressing objects:  31% (137/441)[K
-remote: Compressing objects:  32% (142/441)[K
-remote: Compressing objects:  33% (146/441)[K
-
-    remote: Compressing objects:  34% (150/441)[K
-remote: Compressing objects:  35% (155/441)[K
-remote: Compressing objects:  36% (159/441)[K
-remote: Compressing objects:  37% (164/441)[K
-remote: Compressing objects:  38% (168/441)[K
-remote: Compressing objects:  39% (172/441)[K
-remote: Compressing objects:  40% (177/441)[K
-remote: Compressing objects:  41% (181/441)[K
-remote: Compressing objects:  42% (186/441)[K
-remote: Compressing objects:  43% (190/441)[K
-remote: Compressing objects:  44% (195/441)[K
-remote: Compressing objects:  45% (199/441)[K
-remote: Compressing objects:  46% (203/441)[K
-remote: Compressing objects:  47% (208/441)[K
-remote: Compressing objects:  48% (212/441)[K
-remote: Compressing objects:  49% (217/441)[K
-remote: Compressing objects:  50% (221/441)[K
-remote: Compressing objects:  51% (225/441)[K
-remote: Compressing objects:  52% (230/441)[K
-remote: Compressing objects:  53% (234/441)[K
-remote: Compressing objects:  54% (239/441)[K
-remote: Compressing objects:  55% (243/441)[K
-remote: Compressing objects:  56% (247/441)[K
-remote: Compressing objects:  57% (252/441)[K
-remote: Compressing objects:  58% (256/441)[K
-remote: Compressing objects:  59% (261/441)[K
-remote: Compressing objects:  60% (265/441)[K
-remote: Compressing objects:  61% (270/441)[K
-remote: Compressing objects:  62% (274/441)[K
-remote: Compressing objects:  63% (278/441)[K
-remote: Compressing objects:  64% (283/441)[K
-remote: Compressing objects:  65% (287/441)[K
-remote: Compressing objects:  66% (292/441)[K
-remote: Compressing objects:  67% (296/441)[K
-remote: Compressing objects:  68% (300/441)[K
-remote: Compressing objects:  69% (305/441)[K
-remote: Compressing objects:  70% (309/441)[K
-remote: Compressing objects:  71% (314/441)[K
-remote: Compressing objects:  72% (318/441)[K
-remote: Compressing objects:  73% (322/441)[K
-remote: Compressing objects:  74% (327/441)[K
-remote: Compressing objects:  75% (331/441)[K
-remote: Compressing objects:  76% (336/441)[K
-remote: Compressing objects:  77% (340/441)[K
-remote: Compressing objects:  78% (344/441)[K
-remote: Compressing objects:  79% (349/441)[K
-remote: Compressing objects:  80% (353/441)[K
-remote: Compressing objects:  81% (358/441)[K
-remote: Compressing objects:  82% (362/441)[K
-remote: Compressing objects:  83% (367/441)[K
-remote: Compressing objects:  84% (371/441)[K
-remote: Compressing objects:  85% (375/441)[K
-remote: Compressing objects:  86% (380/441)[K
-remote: Compressing objects:  87% (384/441)[K
-remote: Compressing objects:  88% (389/441)[K
-remote: Compressing objects:  89% (393/441)[K
-remote: Compressing objects:  90% (397/441)[K
-remote: Compressing objects:  91% (402/441)[K
-remote: Compressing objects:  92% (406/441)[K
-remote: Compressing objects:  93% (411/441)[K
-remote: Compressing objects:  94% (415/441)[K
-remote: Compressing objects:  95% (419/441)[K
-remote: Compressing objects:  96% (424/441)[K
-remote: Compressing objects:  97% (428/441)[K
-remote: Compressing objects:  98% (433/441)[K
-remote: Compressing objects:  99% (437/441)[K
-remote: Compressing objects: 100% (441/441)[K
-remote: Compressing objects: 100% (441/441), done.[K
-    Receiving objects:   0% (1/30595)
-
-    Receiving objects:   1% (306/30595)
-Receiving objects:   2% (612/30595)
-Receiving objects:   3% (918/30595)
-Receiving objects:   4% (1224/30595)
-Receiving objects:   5% (1530/30595)
-Receiving objects:   6% (1836/30595)
-
-    Receiving objects:   7% (2142/30595)
-Receiving objects:   8% (2448/30595)
-Receiving objects:   9% (2754/30595)
-Receiving objects:  10% (3060/30595)
-Receiving objects:  11% (3366/30595)
-Receiving objects:  12% (3672/30595)
-
-    Receiving objects:  13% (3978/30595)
-Receiving objects:  14% (4284/30595)
-Receiving objects:  15% (4590/30595)
-Receiving objects:  16% (4896/30595)
-Receiving objects:  17% (5202/30595)
-Receiving objects:  18% (5508/30595)
-Receiving objects:  19% (5814/30595)
-Receiving objects:  20% (6119/30595)
-Receiving objects:  21% (6425/30595)
-
-    Receiving objects:  22% (6731/30595)
-Receiving objects:  23% (7037/30595)
-Receiving objects:  24% (7343/30595)
-Receiving objects:  25% (7649/30595)
-Receiving objects:  26% (7955/30595)
-Receiving objects:  27% (8261/30595)
-Receiving objects:  28% (8567/30595)
-
-    Receiving objects:  29% (8873/30595)
-
-    Receiving objects:  30% (9179/30595)
-
-    Receiving objects:  31% (9485/30595)
-
-    Receiving objects:  32% (9791/30595), 20.68 MiB | 41.33 MiB/s
-
-    Receiving objects:  33% (10097/30595), 20.68 MiB | 41.33 MiB/s
-
-    Receiving objects:  34% (10403/30595), 20.68 MiB | 41.33 MiB/s
-Receiving objects:  35% (10709/30595), 20.68 MiB | 41.33 MiB/s
-Receiving objects:  36% (11015/30595), 20.68 MiB | 41.33 MiB/s
-
-    Receiving objects:  37% (11321/30595), 20.68 MiB | 41.33 MiB/s
-Receiving objects:  38% (11627/30595), 20.68 MiB | 41.33 MiB/s
-
-    Receiving objects:  39% (11933/30595), 20.68 MiB | 41.33 MiB/s
-Receiving objects:  40% (12238/30595), 20.68 MiB | 41.33 MiB/s
-
-    Receiving objects:  41% (12544/30595), 20.68 MiB | 41.33 MiB/s
-Receiving objects:  42% (12850/30595), 20.68 MiB | 41.33 MiB/s
-Receiving objects:  43% (13156/30595), 20.68 MiB | 41.33 MiB/s
-
-    Receiving objects:  44% (13462/30595), 20.68 MiB | 41.33 MiB/s
-Receiving objects:  45% (13768/30595), 20.68 MiB | 41.33 MiB/s
-Receiving objects:  46% (14074/30595), 20.68 MiB | 41.33 MiB/s
-Receiving objects:  47% (14380/30595), 20.68 MiB | 41.33 MiB/s
-Receiving objects:  48% (14686/30595), 20.68 MiB | 41.33 MiB/s
-Receiving objects:  49% (14992/30595), 20.68 MiB | 41.33 MiB/s
-Receiving objects:  50% (15298/30595), 20.68 MiB | 41.33 MiB/s
-Receiving objects:  51% (15604/30595), 20.68 MiB | 41.33 MiB/s
-Receiving objects:  52% (15910/30595), 20.68 MiB | 41.33 MiB/s
-Receiving objects:  53% (16216/30595), 20.68 MiB | 41.33 MiB/s
-Receiving objects:  54% (16522/30595), 20.68 MiB | 41.33 MiB/s
-Receiving objects:  55% (16828/30595), 20.68 MiB | 41.33 MiB/s
-Receiving objects:  56% (17134/30595), 20.68 MiB | 41.33 MiB/s
-
-    Receiving objects:  57% (17440/30595), 20.68 MiB | 41.33 MiB/s
-Receiving objects:  58% (17746/30595), 20.68 MiB | 41.33 MiB/s
-Receiving objects:  59% (18052/30595), 20.68 MiB | 41.33 MiB/s
-Receiving objects:  60% (18357/30595), 20.68 MiB | 41.33 MiB/s
-Receiving objects:  61% (18663/30595), 20.68 MiB | 41.33 MiB/s
-Receiving objects:  62% (18969/30595), 20.68 MiB | 41.33 MiB/s
-Receiving objects:  63% (19275/30595), 20.68 MiB | 41.33 MiB/s
-Receiving objects:  64% (19581/30595), 20.68 MiB | 41.33 MiB/s
-
-    Receiving objects:  64% (19694/30595), 40.92 MiB | 40.91 MiB/s
-
-    Receiving objects:  65% (19887/30595), 40.92 MiB | 40.91 MiB/s
-Receiving objects:  66% (20193/30595), 40.92 MiB | 40.91 MiB/s
-Receiving objects:  67% (20499/30595), 40.92 MiB | 40.91 MiB/s
-
-    Receiving objects:  68% (20805/30595), 40.92 MiB | 40.91 MiB/s
-Receiving objects:  69% (21111/30595), 40.92 MiB | 40.91 MiB/s
-Receiving objects:  70% (21417/30595), 40.92 MiB | 40.91 MiB/s
-Receiving objects:  71% (21723/30595), 40.92 MiB | 40.91 MiB/s
-Receiving objects:  72% (22029/30595), 40.92 MiB | 40.91 MiB/s
-Receiving objects:  73% (22335/30595), 40.92 MiB | 40.91 MiB/s
-Receiving objects:  74% (22641/30595), 40.92 MiB | 40.91 MiB/s
-Receiving objects:  75% (22947/30595), 40.92 MiB | 40.91 MiB/s
-
-    Receiving objects:  76% (23253/30595), 77.82 MiB | 51.87 MiB/s
-Receiving objects:  77% (23559/30595), 77.82 MiB | 51.87 MiB/s
-
-    Receiving objects:  78% (23865/30595), 77.82 MiB | 51.87 MiB/s
-Receiving objects:  79% (24171/30595), 77.82 MiB | 51.87 MiB/s
-Receiving objects:  80% (24476/30595), 77.82 MiB | 51.87 MiB/s
-Receiving objects:  81% (24782/30595), 77.82 MiB | 51.87 MiB/s
-Receiving objects:  82% (25088/30595), 77.82 MiB | 51.87 MiB/s
-
-    Receiving objects:  83% (25394/30595), 77.82 MiB | 51.87 MiB/s
-Receiving objects:  84% (25700/30595), 77.82 MiB | 51.87 MiB/s
-Receiving objects:  85% (26006/30595), 77.82 MiB | 51.87 MiB/s
-Receiving objects:  86% (26312/30595), 77.82 MiB | 51.87 MiB/s
-Receiving objects:  87% (26618/30595), 77.82 MiB | 51.87 MiB/s
-Receiving objects:  88% (26924/30595), 77.82 MiB | 51.87 MiB/s
-Receiving objects:  89% (27230/30595), 77.82 MiB | 51.87 MiB/s
-Receiving objects:  90% (27536/30595), 77.82 MiB | 51.87 MiB/s
-Receiving objects:  91% (27842/30595), 77.82 MiB | 51.87 MiB/s
-Receiving objects:  92% (28148/30595), 77.82 MiB | 51.87 MiB/s
-
-    Receiving objects:  93% (28454/30595), 77.82 MiB | 51.87 MiB/s
-Receiving objects:  94% (28760/30595), 77.82 MiB | 51.87 MiB/s
-Receiving objects:  95% (29066/30595), 77.82 MiB | 51.87 MiB/s
-Receiving objects:  96% (29372/30595), 77.82 MiB | 51.87 MiB/s
-Receiving objects:  97% (29678/30595), 77.82 MiB | 51.87 MiB/s
-Receiving objects:  98% (29984/30595), 77.82 MiB | 51.87 MiB/s
-Receiving objects:  99% (30290/30595), 77.82 MiB | 51.87 MiB/s
-remote: Total 30595 (delta 1599), reused 1478 (delta 1455), pack-reused 28695 (from 2)[K
-    Receiving objects: 100% (30595/30595), 77.82 MiB | 51.87 MiB/s
-Receiving objects: 100% (30595/30595), 100.06 MiB | 53.67 MiB/s, done.
-
-
-    Resolving deltas:   0% (0/15576)
-Resolving deltas:   1% (156/15576)
-Resolving deltas:   2% (312/15576)
-Resolving deltas:   3% (468/15576)
-Resolving deltas:   4% (624/15576)
-Resolving deltas:   5% (779/15576)
-Resolving deltas:   6% (935/15576)
-Resolving deltas:   7% (1091/15576)
-Resolving deltas:   8% (1247/15576)
-Resolving deltas:   9% (1402/15576)
-Resolving deltas:  10% (1558/15576)
-Resolving deltas:  11% (1714/15576)
-Resolving deltas:  12% (1870/15576)
-Resolving deltas:  13% (2026/15576)
-Resolving deltas:  14% (2181/15576)
-Resolving deltas:  15% (2337/15576)
-Resolving deltas:  16% (2493/15576)
-Resolving deltas:  17% (2648/15576)
-Resolving deltas:  18% (2804/15576)
-Resolving deltas:  19% (2961/15576)
-
-    Resolving deltas:  20% (3116/15576)
-Resolving deltas:  21% (3271/15576)
-Resolving deltas:  22% (3427/15576)
-Resolving deltas:  23% (3583/15576)
-Resolving deltas:  24% (3740/15576)
-Resolving deltas:  25% (3894/15576)
-Resolving deltas:  26% (4050/15576)
-Resolving deltas:  27% (4206/15576)
-Resolving deltas:  28% (4362/15576)
-Resolving deltas:  29% (4518/15576)
-Resolving deltas:  30% (4673/15576)
-Resolving deltas:  31% (4830/15576)
-Resolving deltas:  32% (4985/15576)
-Resolving deltas:  33% (5141/15576)
-Resolving deltas:  34% (5296/15576)
-Resolving deltas:  35% (5452/15576)
-
-    Resolving deltas:  36% (5608/15576)
-Resolving deltas:  37% (5764/15576)
-Resolving deltas:  38% (5919/15576)
-Resolving deltas:  39% (6075/15576)
-Resolving deltas:  40% (6231/15576)
-Resolving deltas:  41% (6387/15576)
-Resolving deltas:  42% (6542/15576)
-Resolving deltas:  43% (6698/15576)
-Resolving deltas:  44% (6854/15576)
-Resolving deltas:  45% (7010/15576)
-Resolving deltas:  46% (7165/15576)
-Resolving deltas:  47% (7321/15576)
-Resolving deltas:  48% (7477/15576)
-Resolving deltas:  49% (7633/15576)
-Resolving deltas:  50% (7788/15576)
-Resolving deltas:  51% (7944/15576)
-Resolving deltas:  52% (8100/15576)
-Resolving deltas:  53% (8257/15576)
-Resolving deltas:  54% (8412/15576)
-Resolving deltas:  55% (8567/15576)
-
-    Resolving deltas:  56% (8723/15576)
-Resolving deltas:  57% (8879/15576)
-Resolving deltas:  58% (9035/15576)
-Resolving deltas:  59% (9190/15576)
-Resolving deltas:  60% (9346/15576)
-Resolving deltas:  61% (9502/15576)
-Resolving deltas:  62% (9658/15576)
-Resolving deltas:  63% (9813/15576)
-Resolving deltas:  64% (9969/15576)
-Resolving deltas:  65% (10125/15576)
-Resolving deltas:  66% (10281/15576)
-Resolving deltas:  67% (10436/15576)
-Resolving deltas:  68% (10592/15576)
-Resolving deltas:  69% (10748/15576)
-Resolving deltas:  70% (10904/15576)
-Resolving deltas:  71% (11059/15576)
-
-    Resolving deltas:  72% (11215/15576)
-Resolving deltas:  73% (11371/15576)
-Resolving deltas:  74% (11527/15576)
-Resolving deltas:  75% (11682/15576)
-Resolving deltas:  76% (11838/15576)
-Resolving deltas:  77% (11994/15576)
-Resolving deltas:  78% (12150/15576)
-Resolving deltas:  79% (12306/15576)
-Resolving deltas:  80% (12461/15576)
-
-    Resolving deltas:  81% (12617/15576)
-Resolving deltas:  82% (12773/15576)
-Resolving deltas:  83% (12929/15576)
-Resolving deltas:  84% (13084/15576)
-
-    Resolving deltas:  85% (13240/15576)
-Resolving deltas:  86% (13396/15576)
-Resolving deltas:  87% (13552/15576)
-
-    Resolving deltas:  88% (13707/15576)
-Resolving deltas:  89% (13864/15576)
-Resolving deltas:  90% (14019/15576)
-Resolving deltas:  91% (14175/15576)
-Resolving deltas:  92% (14330/15576)
-Resolving deltas:  93% (14486/15576)
-Resolving deltas:  94% (14642/15576)
-Resolving deltas:  95% (14798/15576)
-Resolving deltas:  96% (14953/15576)
-Resolving deltas:  97% (15109/15576)
-Resolving deltas:  98% (15265/15576)
-Resolving deltas:  99% (15421/15576)
-Resolving deltas: 100% (15576/15576)
-Resolving deltas: 100% (15576/15576), done.
-
 
 ## Part 1: Basic Queries
 
@@ -527,7 +60,6 @@ that's perfect for learning BIQL basics.
 ```python
 dataset_path = bids_examples_dir / "synthetic"
 q = create_query_engine(dataset_path)
-
 q.dataset_stats()
 ```
 
@@ -555,8 +87,21 @@ q.run_query("sub=01", format="dataframe").head(5)
 
 
 
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
 
-<table border="1" class="dataframe">
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table class="dataframe">
   <thead>
     <tr style="text-align: right;">
       <th></th>
@@ -677,8 +222,21 @@ q.run_query("SELECT DISTINCT task WHERE datatype=func", format="dataframe")
 
 
 
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
 
-<table border="1" class="dataframe">
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table class="dataframe">
   <thead>
     <tr style="text-align: right;">
       <th></th>
@@ -712,8 +270,21 @@ q.run_query("datatype=anat AND suffix=T1w", format="dataframe").head(5)
 
 
 
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
 
-<table border="1" class="dataframe">
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table class="dataframe">
   <thead>
     <tr style="text-align: right;">
       <th></th>
@@ -809,8 +380,21 @@ q.run_query("task=nback OR task=rest", format="dataframe")
 
 
 
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
 
-<table border="1" class="dataframe">
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table class="dataframe">
   <thead>
     <tr style="text-align: right;">
       <th></th>
@@ -1297,8 +881,21 @@ q.run_query("WHERE sub=01 AND datatype=func", format="dataframe")
 
 
 
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
 
-<table border="1" class="dataframe">
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table class="dataframe">
   <thead>
     <tr style="text-align: right;">
       <th></th>
@@ -1428,8 +1025,21 @@ q.run_query(
 
 
 
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
 
-<table border="1" class="dataframe">
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table class="dataframe">
   <thead>
     <tr style="text-align: right;">
       <th></th>
@@ -1667,8 +1277,21 @@ q.run_query(
 
 
 
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
 
-<table border="1" class="dataframe">
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table class="dataframe">
   <thead>
     <tr style="text-align: right;">
       <th></th>
@@ -1761,8 +1384,21 @@ q.run_query(
 
 
 
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
 
-<table border="1" class="dataframe">
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table class="dataframe">
   <thead>
     <tr style="text-align: right;">
       <th></th>
@@ -1818,8 +1454,21 @@ q.run_query(
 
 
 
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
 
-<table border="1" class="dataframe">
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table class="dataframe">
   <thead>
     <tr style="text-align: right;">
       <th></th>
@@ -1869,8 +1518,21 @@ q.run_query("SELECT sub, COUNT(*) GROUP BY sub", format="dataframe")
 
 
 
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
 
-<table border="1" class="dataframe">
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table class="dataframe">
   <thead>
     <tr style="text-align: right;">
       <th></th>
@@ -2031,8 +1693,21 @@ q.run_query(
 
 
 
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
 
-<table border="1" class="dataframe">
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table class="dataframe">
   <thead>
     <tr style="text-align: right;">
       <th></th>
@@ -2089,8 +1764,21 @@ q.run_query(
 
 
 
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
 
-<table border="1" class="dataframe">
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table class="dataframe">
   <thead>
     <tr style="text-align: right;">
       <th></th>
@@ -2439,8 +2127,21 @@ q.run_query(sample_query, format="dataframe")
 
 
 
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
 
-<table border="1" class="dataframe">
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table class="dataframe">
   <thead>
     <tr style="text-align: right;">
       <th></th>
