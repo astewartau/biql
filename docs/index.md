@@ -40,8 +40,6 @@ GROUP BY sub, ses, acq
 
 🎯 **Smart Pattern Matching** - Wildcard and regex support for flexible file discovery
 
-⚡ **High Performance** - Optimized for large datasets with thousands of files
-
 🧠 **BIDS Native** - Deep understanding of BIDS entities, metadata, and participant data
 
 🔧 **Multiple Output Formats** - JSON, CSV, TSV, table, and paths output
@@ -63,23 +61,9 @@ biql "SELECT sub, acq, COUNT(*) WHERE part=mag GROUP BY sub, acq" \
 ## Use Cases
 
 - **Dataset Exploration** - Quickly understand what data you have
-- **Quality Control** - Find missing files or inconsistent naming
 - **Processing Pipelines** - Generate file lists for batch processing
-- **QSM Workflows** - Group magnitude/phase pairs for reconstruction
 - **Metadata Analysis** - Query acquisition parameters and demographics
-- **File Discovery** - Complex searches across large multi-site studies
-
-## Getting Started
-
-{: .highlight }
-Ready to start querying your BIDS data? Choose your path:
-
-| Guide | Description |
-|:------|:------------|
-| [🚀 Quickstart](quickstart.html) | Get up and running in 5 minutes |
-| [📚 Interactive Tutorial](tutorial.html) | Step-by-step guide with live examples |
-| [📖 Language Reference](language.html) | Complete BIQL syntax reference |
-| [⚙️ CLI Reference](cli.html) | Command-line tool documentation |
+- **Quality Control** - Find missing files or inconsistent naming
 
 ## Community
 
