@@ -15,19 +15,14 @@ from biql.dataset import BIDSDataset
 from biql.evaluator import BIQLEvaluator
 from biql.parser import BIQLParser
 
-# Test constants
-BIDS_EXAMPLES_DIR = Path("/home/ashley/repos/bids-examples/")
-
 
 class TestBIQLEvaluator:
     """Test BIQL query evaluation"""
 
     @pytest.fixture
-    def synthetic_dataset(self):
+    def synthetic_dataset(self, synthetic_dataset_path):
         """Fixture for synthetic BIDS dataset"""
-        if not (BIDS_EXAMPLES_DIR / "synthetic").exists():
-            pytest.skip("BIDS examples not available")
-        return BIDSDataset(BIDS_EXAMPLES_DIR / "synthetic")
+        return BIDSDataset(synthetic_dataset_path)
 
     @pytest.fixture
     def evaluator(self, synthetic_dataset):

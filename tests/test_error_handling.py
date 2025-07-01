@@ -13,9 +13,6 @@ from biql.dataset import BIDSDataset
 from biql.evaluator import BIQLEvaluator
 from biql.parser import BIQLParser
 
-# Test constants
-BIDS_EXAMPLES_DIR = Path("/home/ashley/repos/bids-examples/")
-
 
 class TestErrorHandling:
     """Test error handling and edge cases"""

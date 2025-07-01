@@ -10,7 +10,8 @@ from pathlib import Path
 from biql import BIDSDataset, BIQLEvaluator, BIQLFormatter, BIQLParser
 
 # Example dataset path (adjust to your dataset)
-DATASET_PATH = Path("/home/ashley/repos/bids-examples/synthetic")
+# Note: This example expects a BIDS dataset. You can download bids-examples or use your own dataset.
+DATASET_PATH = Path("path/to/your/bids/dataset")
 
 
 def main():

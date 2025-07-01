@@ -4,8 +4,6 @@ Comprehensive tests for BIDS Query Language (BIQL)
 Tests all components of the BIQL implementation using real BIDS examples.
 """
 
-from pathlib import Path
-
 import pytest
 
 from biql.dataset import BIDSDataset
@@ -13,20 +11,9 @@ from biql.evaluator import BIQLEvaluator
 from biql.formatter import BIQLFormatter
 from biql.parser import BIQLParser
 
-# Test constants
-BIDS_EXAMPLES_DIR = Path("/home/ashley/repos/bids-examples/")
-
 
 class TestIntegration:
     """Integration tests using real BIDS datasets"""
-
-    @pytest.fixture
-    def synthetic_dataset_path(self):
-        """Path to synthetic dataset"""
-        path = BIDS_EXAMPLES_DIR / "synthetic"
-        if not path.exists():
-            pytest.skip("BIDS examples not available")
-        return str(path)
 
     def test_end_to_end_query(self, synthetic_dataset_path):
         """Test complete end-to-end query execution"""

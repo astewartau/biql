@@ -4,39 +4,24 @@ Comprehensive tests for BIDS Query Language (BIQL)
 Tests all components of the BIQL implementation using real BIDS examples.
 """
 
-from pathlib import Path
-
 import pytest
 
 from biql.dataset import BIDSDataset
-
-# Test constants
-BIDS_EXAMPLES_DIR = Path("/home/ashley/repos/bids-examples/")
 
 
 class TestBIDSDataset:
     """Test BIDS dataset loading and indexing"""
 
-    @pytest.fixture
-    def synthetic_dataset(self):
-        """Fixture for synthetic BIDS dataset"""
-        if not (BIDS_EXAMPLES_DIR / "synthetic").exists():
-            pytest.skip("BIDS examples not available")
-        return BIDSDataset(BIDS_EXAMPLES_DIR / "synthetic")
-
-    @pytest.fixture
-    def ds001_dataset(self):
-        """Fixture for ds001 BIDS dataset"""
-        if not (BIDS_EXAMPLES_DIR / "ds001").exists():
-            pytest.skip("BIDS examples not available")
-        return BIDSDataset(BIDS_EXAMPLES_DIR / "ds001")
-
-    def test_dataset_loading(self, synthetic_dataset):
+    def test_dataset_loading(self, synthetic_dataset_path):
         """Test basic dataset loading"""
+        synthetic_dataset = BIDSDataset(synthetic_dataset_path)
+
         assert len(synthetic_dataset.files) > 0
         assert len(synthetic_dataset.participants) > 0
 
-    def test_entity_extraction(self, synthetic_dataset):
+    def test_entity_extraction(self, synthetic_dataset_path):
+        """Test BIDS entity extraction"""
+        synthetic_dataset = BIDSDataset(synthetic_dataset_path)
         """Test BIDS entity extraction"""
         subjects = synthetic_dataset.get_subjects()
         assert "01" in subjects
@@ -46,7 +31,9 @@ class TestBIDSDataset:
         assert "anat" in datatypes
         assert "func" in datatypes
 
-    def test_file_parsing(self, synthetic_dataset):
+    def test_file_parsing(self, synthetic_dataset_path):
+        """Test individual file parsing"""
+        synthetic_dataset = BIDSDataset(synthetic_dataset_path)
         """Test individual file parsing"""
         # Find a functional file
         func_files = [
@@ -58,7 +45,9 @@ class TestBIDSDataset:
         assert "sub" in func_file.entities
         assert "task" in func_file.entities
 
-    def test_participants_loading(self, synthetic_dataset):
+    def test_participants_loading(self, synthetic_dataset_path):
+        """Test participants.tsv loading"""
+        synthetic_dataset = BIDSDataset(synthetic_dataset_path)
         """Test participants.tsv loading"""
         participants = synthetic_dataset.participants
         assert len(participants) > 0
@@ -68,7 +57,9 @@ class TestBIDSDataset:
             assert "age" in participants["01"]
             assert "sex" in participants["01"]
 
-    def test_metadata_inheritance(self, synthetic_dataset):
+    def test_metadata_inheritance(self, synthetic_dataset_path):
+        """Test JSON metadata inheritance"""
+        synthetic_dataset = BIDSDataset(synthetic_dataset_path)
         """Test JSON metadata inheritance"""
         # The synthetic dataset doesn't have individual file metadata,
         # but it should inherit from dataset-level task files

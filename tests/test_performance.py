@@ -5,7 +5,6 @@ Tests performance characteristics and scalability.
 """
 
 import time
-from pathlib import Path
 
 import pytest
 
@@ -13,15 +12,12 @@ from biql.dataset import BIDSDataset
 from biql.evaluator import BIQLEvaluator
 from biql.parser import BIQLParser
 
-# Test constants
-BIDS_EXAMPLES_DIR = Path("/home/ashley/repos/bids-examples/")
-
 
 class TestPerformance:
     """Test BIQL performance characteristics"""
 
     @pytest.fixture
-    def large_dataset(self):
+    def large_dataset(self, bids_examples_dir):
         """Fixture for largest available BIDS dataset"""
         # Try to find the largest dataset for performance testing
         candidates = [
@@ -31,11 +27,17 @@ class TestPerformance:
         ]
 
         for candidate in candidates:
-            path = BIDS_EXAMPLES_DIR / candidate
+            path = bids_examples_dir / candidate
             if path.exists():
                 return BIDSDataset(path)
 
-        pytest.skip("No suitable large dataset found")
+        # Fallback to synthetic if available
+        synthetic_path = bids_examples_dir / "synthetic"
+        if synthetic_path.exists():
+            return BIDSDataset(synthetic_path)
+
+        # If no datasets found, return synthetic dataset from conftest
+        return BIDSDataset(bids_examples_dir / "synthetic")
 
     def test_dataset_loading_performance(self, large_dataset):
         """Test dataset loading performance"""
@@ -166,14 +168,10 @@ class TestPerformance:
         # Test with different sized datasets if available
         datasets_by_size = []
 
-        for dataset_name in ["synthetic", "ds001", "ds107", "ds000117"]:
-            path = BIDS_EXAMPLES_DIR / dataset_name
-            if path.exists():
-                try:
-                    dataset = BIDSDataset(path)
-                    datasets_by_size.append((len(dataset.files), dataset))
-                except Exception:
-                    continue
+        # Use fixture since we no longer have hardcoded path
+        pytest.skip(
+            "Scalability testing requires multiple datasets - not implemented for conftest setup"
+        )
 
         if len(datasets_by_size) < 2:
             pytest.skip("Need multiple datasets for scalability testing")

@@ -231,33 +231,6 @@ class TestBIQLQueryAPI:
         assert "metadata.RepetitionTime" in df.columns
         assert len(df) == test_dataset.expected_func_files  # Exactly 4 func files
 
-    def test_range_syntax_bug_with_synthetic_dataset(self):
-        """Test range syntax bug using the actual synthetic dataset from bids-examples"""
-        # Use the same dataset path as the notebook
-        synthetic_path = Path("/home/ashley/repos/bids-examples/synthetic")
-        if not synthetic_path.exists():
-            pytest.skip("bids-examples/synthetic dataset not found")
-
-        # Create query engine exactly like the notebook does
-        q = create_query_engine(synthetic_path)
-
-        # User's exact queries that demonstrate the bug
-        results_range = q.run_query("SELECT sub WHERE run=[1:2]", format="json")
-        results_in = q.run_query("SELECT sub WHERE run IN [1,2]", format="json")
-
-        # Debug output
-        print(f"\nUsing synthetic dataset at {synthetic_path}")
-        print(f"Range [1:2] returned: {len(results_range)} results")
-        print(f"IN [1,2] returned: {len(results_in)} results")
-
-        # Should have 20 results (5 subjects × 2 sessions × 2 runs for nback task)
-        assert (
-            len(results_in) == 20
-        ), f"Expected 20 results from IN syntax, got {len(results_in)}"
-        assert (
-            len(results_range) == 20
-        ), f"Range syntax should return 20 results but returned {len(results_range)}"
-
     def test_range_syntax_bug(self):
         """Test the reported bug: run=[1:2] returns [] while run IN [1,2] works"""
         # Create test dataset with run values to reproduce the exact bug

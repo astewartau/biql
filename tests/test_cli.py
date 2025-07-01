@@ -12,20 +12,9 @@ from pathlib import Path
 
 import pytest
 
-# Test constants
-BIDS_EXAMPLES_DIR = Path("/home/ashley/repos/bids-examples/")
-
 
 class TestCLI:
     """Test CLI functionality"""
-
-    @pytest.fixture
-    def synthetic_dataset_path(self):
-        """Path to synthetic dataset"""
-        path = BIDS_EXAMPLES_DIR / "synthetic"
-        if not path.exists():
-            pytest.skip("BIDS examples not available")
-        return str(path)
 
     def run_biql_command(self, args, dataset_path=None):
         """Helper to run biql command"""
@@ -39,7 +28,9 @@ class TestCLI:
         )
         return result
 
-    def test_basic_query(self, synthetic_dataset_path):
+    def test_basic_query(self, bids_examples_dir):
+        """Test basic query execution"""
+        synthetic_dataset_path = str(bids_examples_dir / "synthetic")
         """Test basic query execution"""
         result = self.run_biql_command(["sub=01"], synthetic_dataset_path)
 
@@ -50,7 +41,9 @@ class TestCLI:
         for item in output:
             assert item["sub"] == "01"
 
-    def test_format_options(self, synthetic_dataset_path):
+    def test_format_options(self, bids_examples_dir):
+        """Test different output formats"""
+        synthetic_dataset_path = str(bids_examples_dir / "synthetic")
         """Test different output formats"""
         # Test JSON format (default)
         result = self.run_biql_command(
@@ -83,7 +76,9 @@ class TestCLI:
             line.endswith(".nii") or line.endswith(".gz") for line in lines if line
         )
 
-    def test_complex_queries(self, synthetic_dataset_path):
+    def test_complex_queries(self, bids_examples_dir):
+        """Test complex query execution"""
+        synthetic_dataset_path = str(bids_examples_dir / "synthetic")
         """Test complex query execution"""
         # Test SELECT query
         result = self.run_biql_command(
@@ -108,7 +103,9 @@ class TestCLI:
             assert "sub" in output[0]
             assert "count" in output[0] or "_count" in output[0]
 
-    def test_logical_operators(self, synthetic_dataset_path):
+    def test_logical_operators(self, bids_examples_dir):
+        """Test logical operators in CLI"""
+        synthetic_dataset_path = str(bids_examples_dir / "synthetic")
         """Test logical operators in CLI"""
         # Test AND operator
         result = self.run_biql_command(
@@ -131,7 +128,9 @@ class TestCLI:
         for item in output:
             assert item["task"] in ["nback", "rest"]
 
-    def test_range_queries_cli(self, synthetic_dataset_path):
+    def test_range_queries_cli(self, bids_examples_dir):
+        """Test range queries via CLI"""
+        synthetic_dataset_path = str(bids_examples_dir / "synthetic")
         """Test range queries via CLI"""
         result = self.run_biql_command(["run=[1:2]"], synthetic_dataset_path)
         assert result.returncode == 0
@@ -142,7 +141,9 @@ class TestCLI:
                 run_val = int(item["run"])
                 assert 1 <= run_val <= 2
 
-    def test_wildcard_matching_cli(self, synthetic_dataset_path):
+    def test_wildcard_matching_cli(self, bids_examples_dir):
+        """Test wildcard matching via CLI"""
+        synthetic_dataset_path = str(bids_examples_dir / "synthetic")
         """Test wildcard matching via CLI"""
         result = self.run_biql_command(["suffix=*bold*"], synthetic_dataset_path)
         assert result.returncode == 0
@@ -152,7 +153,9 @@ class TestCLI:
             if "suffix" in item:
                 assert "bold" in item["suffix"]
 
-    def test_output_file(self, synthetic_dataset_path):
+    def test_output_file(self, bids_examples_dir):
+        """Test output to file"""
+        synthetic_dataset_path = str(bids_examples_dir / "synthetic")
         """Test output to file"""
         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json") as f:
             output_file = f.name
@@ -174,7 +177,9 @@ class TestCLI:
         finally:
             Path(output_file).unlink(missing_ok=True)
 
-    def test_dataset_stats(self, synthetic_dataset_path):
+    def test_dataset_stats(self, bids_examples_dir):
+        """Test dataset statistics display"""
+        synthetic_dataset_path = str(bids_examples_dir / "synthetic")
         """Test dataset statistics display"""
         result = self.run_biql_command(
             ["--show-stats", "sub=01"], synthetic_dataset_path
@@ -186,7 +191,9 @@ class TestCLI:
         assert "Total files:" in output
         assert "Subjects:" in output
 
-    def test_entity_display(self, synthetic_dataset_path):
+    def test_entity_display(self, bids_examples_dir):
+        """Test entity display"""
+        synthetic_dataset_path = str(bids_examples_dir / "synthetic")
         """Test entity display"""
         result = self.run_biql_command(
             ["--show-entities", "sub=01"], synthetic_dataset_path
@@ -198,7 +205,9 @@ class TestCLI:
         assert "sub" in output
         assert "datatype" in output
 
-    def test_query_validation(self, synthetic_dataset_path):
+    def test_query_validation(self, bids_examples_dir):
+        """Test query validation mode"""
+        synthetic_dataset_path = str(bids_examples_dir / "synthetic")
         """Test query validation mode"""
         # Valid query
         result = self.run_biql_command(
@@ -214,7 +223,9 @@ class TestCLI:
         assert result.returncode == 1
         assert "syntax error" in result.stderr.lower()
 
-    def test_debug_mode(self, synthetic_dataset_path):
+    def test_debug_mode(self, bids_examples_dir):
+        """Test debug output"""
+        synthetic_dataset_path = str(bids_examples_dir / "synthetic")
         """Test debug output"""
         result = self.run_biql_command(["--debug", "sub=01"], synthetic_dataset_path)
         assert result.returncode == 0
@@ -229,13 +240,17 @@ class TestCLI:
         result = self.run_biql_command(["sub=01"], "/nonexistent/path")
         assert result.returncode == 1
 
-    def test_invalid_query_syntax(self, synthetic_dataset_path):
+    def test_invalid_query_syntax(self, bids_examples_dir):
+        """Test handling of invalid query syntax"""
+        synthetic_dataset_path = str(bids_examples_dir / "synthetic")
         """Test handling of invalid query syntax"""
         result = self.run_biql_command(["SELECT FROM WHERE"], synthetic_dataset_path)
         assert result.returncode == 1
         assert "Parse error" in result.stderr or "error" in result.stderr.lower()
 
-    def test_query_evaluation_errors(self, synthetic_dataset_path):
+    def test_query_evaluation_errors(self, bids_examples_dir):
+        """Test handling of query evaluation errors"""
+        synthetic_dataset_path = str(bids_examples_dir / "synthetic")
         """Test handling of query evaluation errors"""
         # This should not crash even with complex invalid operations
         result = self.run_biql_command(
@@ -244,7 +259,9 @@ class TestCLI:
         # Should complete successfully but return no results
         assert result.returncode == 0
 
-    def test_output_file_permission_error(self, synthetic_dataset_path):
+    def test_output_file_permission_error(self, bids_examples_dir):
+        """Test handling of output file permission errors"""
+        synthetic_dataset_path = str(bids_examples_dir / "synthetic")
         """Test handling of output file permission errors"""
         import os
         import tempfile
@@ -279,7 +296,9 @@ class TestCLI:
         assert result.returncode == 0
         assert "0.1.0" in result.stdout
 
-    def test_quoted_queries(self, synthetic_dataset_path):
+    def test_quoted_queries(self, bids_examples_dir):
+        """Test queries with quotes and special characters"""
+        synthetic_dataset_path = str(bids_examples_dir / "synthetic")
         """Test queries with quotes and special characters"""
         # Query with quotes
         result = self.run_biql_command(['task="nback"'], synthetic_dataset_path)
@@ -290,7 +309,9 @@ class TestCLI:
             if "task" in item:
                 assert item["task"] == "nback"
 
-    def test_metadata_queries_cli(self, synthetic_dataset_path):
+    def test_metadata_queries_cli(self, bids_examples_dir):
+        """Test metadata queries via CLI"""
+        synthetic_dataset_path = str(bids_examples_dir / "synthetic")
         """Test metadata queries via CLI"""
         result = self.run_biql_command(
             ["metadata.RepetitionTime>0"], synthetic_dataset_path
@@ -298,7 +319,9 @@ class TestCLI:
         assert result.returncode == 0
         # Should not error, even if no results
 
-    def test_participants_queries_cli(self, synthetic_dataset_path):
+    def test_participants_queries_cli(self, bids_examples_dir):
+        """Test participants queries via CLI"""
+        synthetic_dataset_path = str(bids_examples_dir / "synthetic")
         """Test participants queries via CLI"""
         result = self.run_biql_command(["participants.age>20"], synthetic_dataset_path)
         assert result.returncode == 0
