@@ -29,7 +29,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 keywords = ["bids", "neuroimaging", "query", "language", "sql", "medical-imaging", "neuroscience"]
-dependencies = []
+dependencies = ["psutil", "pandas"]
 
 [project.optional-dependencies]
 dev = [

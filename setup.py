@@ -38,7 +38,8 @@ setup(
     keywords="bids neuroimaging query language sql medical-imaging neuroscience",
     python_requires=">=3.8",
     install_requires=[
-        # pathlib is built-in for Python 3.8+, no need to specify
+        "psutil",
+        "pandas",
     ],
     extras_require={
         "dev": [
