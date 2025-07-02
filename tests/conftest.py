@@ -126,8 +126,44 @@ class BIDSExamplesManager:
     def cleanup(self):
         """Cleanup the examples directory."""
         if self._examples_dir and self._examples_dir.exists():
-            shutil.rmtree(self._examples_dir.parent)
+            self._safe_rmtree(self._examples_dir.parent)
             self._examples_dir = None
+
+    def _safe_rmtree(self, path):
+        """Safely remove directory tree, handling Windows permission issues."""
+        import stat
+        import sys
+
+        def handle_remove_readonly(func, path, exc_info):
+            """Error handler for removing read-only files on Windows."""
+            if os.path.exists(path):
+                # Make the file writable and try again
+                os.chmod(path, stat.S_IWRITE)
+                func(path)
+
+        try:
+            # Use onexc for Python 3.12+ or onerror for older versions
+            if sys.version_info >= (3, 12):
+                shutil.rmtree(path, onexc=handle_remove_readonly)
+            else:
+                shutil.rmtree(path, onerror=handle_remove_readonly)
+        except (OSError, PermissionError):
+            # If cleanup still fails, try a more aggressive approach
+            try:
+                if os.name == "nt":  # Windows
+                    # On Windows, use subprocess to force remove
+                    subprocess.run(
+                        ["rmdir", "/S", "/Q", str(path)],
+                        shell=True,
+                        capture_output=True,
+                    )
+                else:
+                    # On Unix-like systems, use rm -rf as fallback
+                    subprocess.run(["rm", "-rf", str(path)], capture_output=True)
+            except Exception:
+                # If all cleanup attempts fail, just ignore the error
+                # The temp directory will be cleaned up by the OS eventually
+                pass
 
 
 # Global instance
