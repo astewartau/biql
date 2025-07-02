@@ -13,6 +13,13 @@ from .evaluator import BIQLEvaluator
 from .formatter import BIQLFormatter
 from .parser import BIQLParseError, BIQLParser
 
+try:
+    import readline
+
+    HAS_READLINE = True
+except ImportError:
+    HAS_READLINE = False
+
 
 def create_parser() -> argparse.ArgumentParser:
     """Create command line argument parser"""
@@ -44,12 +51,18 @@ Examples:
   biql "run=[1:5] AND task=nback"
 
   # Pattern matching
-  biql "sub=control* OR task~=/mem.*/""
+  biql "sub=control* OR task~=/mem.*/"
+
+  # Interactive shell (default when no query provided)
+  biql
+  biql --dataset /path/to/dataset
         """,
     )
 
     parser.add_argument(
-        "query", help="BIQL query string (use quotes to avoid shell interpretation)"
+        "query",
+        nargs="?",
+        help="BIQL query string (use quotes to avoid shell interpretation)",
     )
 
     parser.add_argument(
@@ -87,7 +100,7 @@ Examples:
         "--show-stats", action="store_true", help="Show dataset statistics and exit"
     )
 
-    parser.add_argument("--version", action="version", version="%(prog)s 0.1.0")
+    parser.add_argument("--version", action="version", version="%(prog)s 0.3.0")
 
     return parser
 
@@ -115,6 +128,146 @@ def show_dataset_entities(dataset: BIDSDataset) -> None:
     print("Available entities:")
     for entity in sorted(entities):
         print(f"  {entity}")
+
+
+def setup_readline():
+    """Setup readline for better command line editing"""
+    if not HAS_READLINE:
+        return
+
+    # Enable tab completion
+    readline.set_completer_delims(" \t\n`~!@#$%^&*()=+[{]}\\|;:'\",<>?")
+    readline.parse_and_bind("tab: complete")
+
+    # Enable history
+    try:
+        import os
+
+        history_file = os.path.expanduser("~/.biql_history")
+        readline.read_history_file(history_file)
+        readline.set_history_length(1000)
+
+        # Save history on exit
+        import atexit
+
+        atexit.register(readline.write_history_file, history_file)
+    except (FileNotFoundError, PermissionError):
+        pass
+
+
+def interactive_shell(dataset: BIDSDataset, debug: bool = False) -> None:
+    """Start interactive BIQL shell"""
+    setup_readline()
+
+    print("BIQL Interactive Shell")
+    print(f"Dataset: {dataset.root}")
+    print(f"Files: {len(dataset.files)}")
+    print("Type 'help' for commands, 'quit' or Ctrl+C to exit\n")
+
+    evaluator = BIQLEvaluator(dataset)
+
+    while True:
+        try:
+            # Get query from user
+            query_str = input("biql> ").strip()
+
+            if not query_str:
+                continue
+
+            # Handle special commands
+            if query_str.lower() in ("quit", "exit", "q"):
+                break
+            elif query_str.lower() == "help":
+                print_interactive_help()
+                continue
+            elif query_str.lower() == "stats":
+                show_dataset_stats(dataset)
+                continue
+            elif query_str.lower() == "entities":
+                show_dataset_entities(dataset)
+                continue
+            elif query_str.lower().startswith("format "):
+                format_type = query_str[7:].strip()
+                if format_type in ["json", "table", "csv", "tsv", "paths"]:
+                    print(f"Default format set to: {format_type}")
+                    # Store format preference in evaluator
+                    evaluator._default_format = format_type
+                else:
+                    print(f"Invalid format: {format_type}")
+                    print("Available formats: json, table, csv, tsv, paths")
+                continue
+
+            # Execute query
+            try:
+                parser = BIQLParser.from_string(query_str)
+                query = parser.parse()
+
+                if debug:
+                    print(f"Parsed: {query}")
+
+                results = evaluator.evaluate(query)
+
+                # Determine format
+                format_type = query.format or getattr(
+                    evaluator, "_default_format", "json"
+                )
+
+                # Format and display results
+                original_files = (
+                    evaluator.get_original_matching_files()
+                    if format_type == "paths"
+                    else None
+                )
+
+                formatted = BIQLFormatter.format(results, format_type, original_files)
+                print(formatted)
+
+                if results:
+                    print(f"\n{len(results)} result{'s' if len(results) != 1 else ''}")
+
+            except BIQLParseError as e:
+                print(f"Syntax error: {e}")
+            except Exception as e:
+                print(f"Error: {e}")
+                if debug:
+                    import traceback
+
+                    traceback.print_exc()
+
+        except KeyboardInterrupt:
+            print("\nUse 'quit' to exit")
+        except EOFError:
+            print("\nGoodbye!")
+            break
+
+
+def print_interactive_help():
+    """Print help for interactive mode"""
+    help_text = """
+Interactive BIQL Shell Commands:
+
+Query Examples:
+  suffix=T1w                    - Find T1w files
+  sub=01 AND datatype=func      - Functional files for sub-01
+  SELECT sub, ses WHERE task=rest - Select specific fields
+
+Special Commands:
+  help                          - Show this help
+  stats                         - Show dataset statistics
+  entities                      - Show available entities
+  format <type>                 - Set default output format
+  quit, exit, q                 - Exit shell
+
+Formats: json, table, csv, tsv, paths
+
+Keyboard Shortcuts:
+  ↑/↓                          - Command history
+  Ctrl+A/E                     - Beginning/end of line
+  Ctrl+W                       - Delete word backward
+  Alt+Backspace                - Delete word backward
+  Tab                          - Auto-completion (if available)
+"""
+    print(help_text)
 
 
 def validate_query(query_str: str) -> bool:
@@ -173,6 +326,11 @@ def main() -> int:
 
         if args.show_entities:
             show_dataset_entities(dataset)
+            return 0
+
+        # If no query provided, start interactive mode
+        if not args.query:
+            interactive_shell(dataset, args.debug)
             return 0
 
         # Validate query syntax

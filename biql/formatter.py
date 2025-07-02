@@ -7,7 +7,11 @@ Formats query results in different output formats.
 import csv
 import io
 import json
+import os
+import shutil
 from typing import Any, Dict, List, Optional
+
+from tabulate import tabulate
 
 
 class BIQLFormatter:
@@ -52,71 +56,145 @@ class BIQLFormatter:
 
     @staticmethod
     def _format_table(results: List[Dict]) -> str:
-        """Format results as ASCII table"""
+        """Format results as ASCII table using tabulate with console width awareness"""
         if not results:
             return "No results found."
 
-        # Get all unique keys, excluding internal fields
-        all_keys = set()
+        # Get all unique keys, preserving order from first result
+        all_keys = []
+        seen_keys = set()
         for result in results:
             for key in result.keys():
-                if not key.startswith("_") or key == "_count":
-                    all_keys.add(key)
-        all_keys = sorted(all_keys)
+                if (
+                    not key.startswith("_") or key == "_count"
+                ) and key not in seen_keys:
+                    all_keys.append(key)
+                    seen_keys.add(key)
 
         if not all_keys:
             return "No data to display."
 
-        # Calculate column widths
-        widths = {}
-        for key in all_keys:
-            widths[key] = len(key)
+        # Get console width
+        try:
+            console_width = shutil.get_terminal_size().columns
+        except (AttributeError, OSError):
+            console_width = 80  # Default fallback
 
-        for result in results:
-            for key in all_keys:
+        # Calculate actual content widths for each column
+        col_widths = {}
+        for key in all_keys:
+            # Start with header width
+            col_widths[key] = len(key)
+            # Check content width
+            for result in results:
                 value = BIQLFormatter._format_value_for_display(result.get(key))
-                widths[key] = max(widths[key], len(value))
+                col_widths[key] = max(col_widths[key], len(str(value)))
 
-        # Build table
-        lines = []
+        # Define sensible max widths for known columns (only used when space is limited)
+        max_width_config = {
+            "filepath": 50,
+            "relative_path": 50,
+            "filename": 35,
+            "metadata": 30,
+        }
 
-        # Header
-        header = "|"
-        for key in all_keys:
-            header += f" {key:<{widths[key]}} |"
-        lines.append(header)
+        # Calculate total width needed if we show all columns without limits
+        total_needed_width = 0
+        for i, key in enumerate(all_keys):
+            actual_width = col_widths[key]
+            separator_width = 3 if i > 0 else 0  # " | "
+            total_needed_width += actual_width + separator_width
 
-        # Separator
-        separator = "|"
-        for key in all_keys:
-            separator += f" {'-' * widths[key]} |"
-        lines.append(separator)
+        margin = 10
+        available_width = console_width - margin
 
-        # Data rows
-        for result in results:
-            row = "|"
+        # If all columns fit comfortably, show them all without maxcolwidths restrictions
+        if total_needed_width <= available_width:
+            selected_keys = all_keys
+            maxcolwidths = None  # No restrictions needed
+        else:
+            # We need to be selective - preserve order but apply width limits
+            selected_keys = []
+            maxcolwidths = []
+            estimated_width = 0
+
+            # First pass: try to fit all columns with reasonable width limits
             for key in all_keys:
-                value = BIQLFormatter._format_value_for_display(result.get(key))
-                row += f" {value:<{widths[key]}} |"
-            lines.append(row)
+                max_width = max_width_config.get(key, 30)  # Default reasonable limit
+                actual_width = min(col_widths[key], max_width)
+                separator_width = 3 if selected_keys else 0
+                needed_width = actual_width + separator_width
 
-        return "\n".join(lines)
+                if estimated_width + needed_width <= available_width:
+                    selected_keys.append(key)
+                    maxcolwidths.append(max_width)
+                    estimated_width += needed_width
+                else:
+                    break
+
+            # If we couldn't fit all columns, ensure we have at least some
+            if not selected_keys and all_keys:
+                # Show first column with remaining space
+                selected_keys = [all_keys[0]]
+                maxcolwidths = [available_width - 5]
+
+        # Prepare data for tabulate
+        table_data = []
+        for result in results:
+            row = []
+            for key in selected_keys:
+                value = BIQLFormatter._format_value_for_display(result.get(key))
+                row.append(value)
+            table_data.append(row)
+
+        # Use tabulate with maxcolwidths for automatic text wrapping (only when needed)
+        if maxcolwidths is not None:
+            formatted_table = tabulate(
+                table_data,
+                headers=selected_keys,
+                tablefmt="simple",
+                stralign="left",
+                numalign="left",
+                maxcolwidths=maxcolwidths,
+            )
+        else:
+            formatted_table = tabulate(
+                table_data,
+                headers=selected_keys,
+                tablefmt="simple",
+                stralign="left",
+                numalign="left",
+            )
+
+        # Add note about hidden columns if any were hidden
+        if len(selected_keys) < len(all_keys):
+            hidden_count = len(all_keys) - len(selected_keys)
+            hidden_cols = [k for k in all_keys if k not in selected_keys]
+            formatted_table += f"\n\nNote: {hidden_count} column{'s' if hidden_count != 1 else ''} hidden due to console width: {', '.join(hidden_cols[:3])}{'...' if len(hidden_cols) > 3 else ''}"
+            formatted_table += (
+                f"\nUse a wider terminal or specify columns with SELECT to see more."
+            )
+
+        return formatted_table
 
     @staticmethod
     def _format_csv(results: List[Dict]) -> str:
         """Format results as CSV"""
         if not results:
-            return ""
+            return "No results found"
 
         output = io.StringIO()
 
-        # Get all fieldnames, excluding internal fields
-        fieldnames = set()
+        # Get all fieldnames, preserving order from first result
+        fieldnames = []
+        seen_keys = set()
         for result in results:
             for key in result.keys():
-                if not key.startswith("_") or key == "_count":
-                    fieldnames.add(key)
-        fieldnames = sorted(fieldnames)
+                if (
+                    not key.startswith("_") or key == "_count"
+                ) and key not in seen_keys:
+                    fieldnames.append(key)
+                    seen_keys.add(key)
 
         if fieldnames:
             writer = csv.DictWriter(
@@ -138,15 +216,18 @@ class BIQLFormatter:
     def _format_tsv(results: List[Dict]) -> str:
         """Format results as TSV (Tab-Separated Values)"""
         if not results:
-            return ""
+            return "No results found"
 
-        # Get all fieldnames, excluding internal fields
-        fieldnames = set()
+        # Get all fieldnames, preserving order from first result
+        fieldnames = []
+        seen_keys = set()
         for result in results:
             for key in result.keys():
-                if not key.startswith("_") or key == "_count":
-                    fieldnames.add(key)
-        fieldnames = sorted(fieldnames)
+                if (
+                    not key.startswith("_") or key == "_count"
+                ) and key not in seen_keys:
+                    fieldnames.append(key)
+                    seen_keys.add(key)
 
         if not fieldnames:
             return ""
@@ -201,6 +282,8 @@ class BIQLFormatter:
                         paths.append(str(result["filename"]))
 
         # Sort paths for consistent output
+        if not paths:
+            return "No results found"
         return "\n".join(sorted(paths))
 
     @staticmethod

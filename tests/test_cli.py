@@ -57,7 +57,7 @@ class TestCLI:
             ["sub=01", "--format", "table"], synthetic_dataset_path
         )
         assert result.returncode == 0
-        assert "|" in result.stdout  # Table format uses pipes
+        assert "-" in result.stdout  # Table format uses dashes for simple format
 
         # Test CSV format
         result = self.run_biql_command(
@@ -294,7 +294,7 @@ class TestCLI:
         """Test version output"""
         result = self.run_biql_command(["--version"])
         assert result.returncode == 0
-        assert "0.1.0" in result.stdout
+        assert "0.3.0" in result.stdout
 
     def test_quoted_queries(self, bids_examples_dir):
         """Test queries with quotes and special characters"""
@@ -341,7 +341,14 @@ class TestCLIEdgeCases:
             )
 
             result = subprocess.run(
-                [sys.executable, "-m", "biql.cli", "", "--dataset", str(dataset_path)],
+                [
+                    sys.executable,
+                    "-m",
+                    "biql.cli",
+                    "sub=*",
+                    "--dataset",
+                    str(dataset_path),
+                ],
                 capture_output=True,
                 text=True,
                 cwd=Path(__file__).parent.parent,

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "biql"
-version = "0.2.0"
+version = "0.3.0"
 authors = [
     {name = "Ashley Stewart"},
 ]
@@ -29,7 +29,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 keywords = ["bids", "neuroimaging", "query", "language", "sql", "medical-imaging", "neuroscience"]
-dependencies = ["psutil", "pandas"]
+dependencies = ["psutil", "pandas", "tabulate"]
 
 [project.optional-dependencies]
 dev = [
